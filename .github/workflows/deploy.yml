@@ -40,4 +40,4 @@ jobs:
       run: |
         gcloud builds submit \
           --config cloudbuild.yaml \
-          --substitutions _CLOUDSDK_COMPUTE_ZONE="$GKE_ZONE",_CLOUDSDK_CONTAINER_CLUSTER="$GKE_CLUSTER",COMMIT_SHA="$GITHUB_SHA"
+          --substitutions _CLOUDSDK_COMPUTE_ZONE="$GKE_ZONE",_CLOUDSDK_CONTAINER_CLUSTER="$GKE_CLUSTER",_PROJECT_ID="$PROJECT_ID",_COMMIT_SHA="$GITHUB_SHA"
