@@ -48,3 +48,7 @@ images:
 
 # Build timeout
 timeout: '1200s'
+
+# Logging configuration
+options:
+  logging: CLOUD_LOGGING_ONLY
