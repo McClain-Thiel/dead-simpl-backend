@@ -154,52 +154,29 @@ class User(TimestampedModel, table=True):
     email: str = Field(index=True)
     name: Optional[str] = None
     deleted_at: Optional[datetime] = None
-
-
-class Organization(TimestampedModel, table=True):
-    __tablename__ = "orgs"
-    
-    name: str
-    slug: str = Field(unique=True, index=True)
-    owner_id: UUID = Field(foreign_key="users.id", index=True)
-    deleted_at: Optional[datetime] = None
     
     # Relationships
-    projects: List["Project"] = Relationship(back_populates="organization")
-    files: List["File"] = Relationship(back_populates="organization")
-    criterion_definitions: List["CriterionDefinition"] = Relationship(back_populates="organization")
-    api_keys: List["APIKey"] = Relationship(back_populates="organization")
-    operation_events: List["OperationEvent"] = Relationship(back_populates="organization")
-    usage_events: List["UsageEvent"] = Relationship(back_populates="organization")
-    billing_alerts: List["BillingAlert"] = Relationship(back_populates="organization")
-    billing_invoices: List["BillingInvoice"] = Relationship(back_populates="organization")
+    files: List["File"] = Relationship(back_populates="user")
+    datasets: List["Dataset"] = Relationship(back_populates="user")
+    criterion_definitions: List["CriterionDefinition"] = Relationship(back_populates="user")
+    eval_runs: List["EvalRun"] = Relationship(back_populates="user")
+    tune_jobs: List["TuneJob"] = Relationship(back_populates="user")
+    models: List["Model"] = Relationship(back_populates="user")
+    deployments: List["Deployment"] = Relationship(back_populates="user")
+    api_keys: List["APIKey"] = Relationship(back_populates="user")
+    operation_events: List["OperationEvent"] = Relationship(back_populates="user")
+    usage_events: List["UsageEvent"] = Relationship(back_populates="user")
+    billing_alerts: List["BillingAlert"] = Relationship(back_populates="user")
+    billing_invoices: List["BillingInvoice"] = Relationship(back_populates="user")
 
 
-class Project(TimestampedModel, table=True):
-    __tablename__ = "projects"
-    
-    org_id: UUID = Field(foreign_key="orgs.id", index=True)
-    name: str
-    description: Optional[str] = None
-    deleted_at: Optional[datetime] = None
-    
-    # Relationships
-    organization: Organization = Relationship(back_populates="projects")
-    files: List["File"] = Relationship(back_populates="project")
-    datasets: List["Dataset"] = Relationship(back_populates="project")
-    eval_runs: List["EvalRun"] = Relationship(back_populates="project")
-    tune_jobs: List["TuneJob"] = Relationship(back_populates="project")
-    models: List["Model"] = Relationship(back_populates="project")
-    deployments: List["Deployment"] = Relationship(back_populates="project")
-    operation_events: List["OperationEvent"] = Relationship(back_populates="project")
-    usage_events: List["UsageEvent"] = Relationship(back_populates="project")
+# Organization and Project models removed - linking everything directly to User
 
 
 class File(BaseModel, table=True):
     __tablename__ = "files"
     
-    org_id: UUID = Field(foreign_key="orgs.id", index=True)
-    project_id: Optional[UUID] = Field(foreign_key="projects.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     kind: FileKind
     storage_url: str
     bytes: Optional[int] = None
@@ -208,8 +185,7 @@ class File(BaseModel, table=True):
     meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
     
     # Relationships
-    organization: Organization = Relationship(back_populates="files")
-    project: Optional[Project] = Relationship(back_populates="files")
+    user: "User" = Relationship(back_populates="files")
     datasets: List["Dataset"] = Relationship(back_populates="file")
     tune_jobs: List["TuneJob"] = Relationship(back_populates="dataset_file")
     model_versions: List["ModelVersion"] = Relationship(back_populates="artifact_file")
@@ -219,7 +195,7 @@ class File(BaseModel, table=True):
 class Dataset(BaseModel, table=True):
     __tablename__ = "datasets"
     
-    project_id: UUID = Field(foreign_key="projects.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     file_id: UUID = Field(foreign_key="files.id")
     name: str
     mode: Mode
@@ -227,7 +203,7 @@ class Dataset(BaseModel, table=True):
     rows_estimate: Optional[int] = None
     
     # Relationships
-    project: Project = Relationship(back_populates="datasets")
+    user: "User" = Relationship(back_populates="datasets")
     file: File = Relationship(back_populates="datasets")
     eval_runs: List["EvalRun"] = Relationship(back_populates="dataset")
 
@@ -235,23 +211,23 @@ class Dataset(BaseModel, table=True):
 class CriterionDefinition(BaseModel, table=True):
     __tablename__ = "criterion_definitions"
     __table_args__ = (
-        Index("ix_criterion_definitions_org_name", "org_id", "name", unique=True),
+        Index("ix_criterion_definitions_user_name", "user_id", "name", unique=True),
     )
     
-    org_id: UUID = Field(foreign_key="orgs.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     name: str
     applies_to: CriterionAppliesTo
     method: CriterionMethod
     config: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
     
     # Relationships
-    organization: Organization = Relationship(back_populates="criterion_definitions")
+    user: "User" = Relationship(back_populates="criterion_definitions")
 
 
 class EvalRun(BaseModel, table=True):
     __tablename__ = "eval_runs"
     
-    project_id: UUID = Field(foreign_key="projects.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     model_ref: str
     dataset_id: UUID = Field(foreign_key="datasets.id")
     eval_type: EvalType = Field(default=EvalType.CRITERIA)
@@ -266,7 +242,7 @@ class EvalRun(BaseModel, table=True):
     report_file_id: Optional[UUID] = Field(foreign_key="files.id")
     
     # Relationships
-    project: Project = Relationship(back_populates="eval_runs")
+    user: "User" = Relationship(back_populates="eval_runs")
     dataset: Dataset = Relationship(back_populates="eval_runs")
     report_file: Optional[File] = Relationship(back_populates="eval_runs")
     row_results: List["EvalRowResult"] = Relationship(back_populates="eval_run")
@@ -310,7 +286,7 @@ class TuneJob(BaseModel, table=True):
     finished_at: Optional[datetime] = None
     
     # Relationships
-    project: Project = Relationship(back_populates="tune_jobs")
+    user: "User" = Relationship(back_populates="tune_jobs")
     dataset_file: File = Relationship(back_populates="tune_jobs")
     created_models: List["Model"] = Relationship(back_populates="created_from_tune_job")
 
@@ -318,15 +294,15 @@ class TuneJob(BaseModel, table=True):
 class Model(BaseModel, table=True):
     __tablename__ = "models"
     
-    project_id: UUID = Field(foreign_key="projects.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     name: str
     provider: Provider
     external_model_id: Optional[str] = None
     created_from_tune: Optional[UUID] = Field(foreign_key="tune_jobs.id")
     
     # Relationships
-    project: Project = Relationship(back_populates="models")
-    created_from_tune_job: Optional[TuneJob] = Relationship(back_populates="models")
+    user: "User" = Relationship(back_populates="models")
+    created_from_tune_job: Optional[TuneJob] = Relationship(back_populates="created_models")
     versions: List["ModelVersion"] = Relationship(back_populates="model")
 
 
@@ -347,7 +323,7 @@ class ModelVersion(BaseModel, table=True):
 class Deployment(BaseModel, table=True):
     __tablename__ = "deployments"
     
-    project_id: UUID = Field(foreign_key="projects.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     model_version_id: UUID = Field(foreign_key="model_versions.id")
     status: DeploymentStatus = Field(default=DeploymentStatus.CREATING)
     autoscale: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
@@ -355,7 +331,7 @@ class Deployment(BaseModel, table=True):
     endpoint_slug: str = Field(unique=True, index=True)
     
     # Relationships
-    project: Project = Relationship(back_populates="deployments")
+    user: "User" = Relationship(back_populates="deployments")
     model_version: ModelVersion = Relationship(back_populates="deployments")
     inference_requests: List["InferenceRequest"] = Relationship(back_populates="deployment")
 
@@ -366,7 +342,7 @@ class APIKey(BaseModel, table=True):
         Index("ix_api_keys_key_prefix", "key_prefix", unique=True),
     )
     
-    org_id: UUID = Field(foreign_key="orgs.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     name: str
     key_prefix: str
     key_hash: str
@@ -377,7 +353,7 @@ class APIKey(BaseModel, table=True):
     last_used_at: Optional[datetime] = None
     
     # Relationships
-    organization: Organization = Relationship(back_populates="api_keys")
+    user: "User" = Relationship(back_populates="api_keys")
     inference_requests: List["InferenceRequest"] = Relationship(back_populates="api_key")
 
 
@@ -408,14 +384,11 @@ class InferenceRequest(BaseModel, table=True):
 class OperationEvent(SQLModel, table=True):
     __tablename__ = "operation_events"
     __table_args__ = (
-        Index("ix_operation_events_org_occurred", "org_id", "occurred_at"),
-        Index("ix_operation_events_project_occurred", "project_id", "occurred_at"),
+        Index("ix_operation_events_user_occurred", "user_id", "occurred_at"),
     )
     
     id: int = Field(primary_key=True)
-    org_id: UUID = Field(foreign_key="orgs.id", index=True)
-    project_id: Optional[UUID] = Field(foreign_key="projects.id", index=True)
-    user_id: Optional[UUID] = Field(foreign_key="users.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     source: EventSource
     action: str
     ref_id: Optional[str] = None
@@ -423,21 +396,18 @@ class OperationEvent(SQLModel, table=True):
     occurred_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Relationships
-    organization: Organization = Relationship(back_populates="operation_events")
-    project: Optional[Project] = Relationship(back_populates="operation_events")
+    user: "User" = Relationship(back_populates="operation_events")
 
 
 class UsageEvent(SQLModel, table=True):
     __tablename__ = "usage_events"
     __table_args__ = (
-        Index("ix_usage_events_org_occurred", "org_id", "occurred_at"),
-        Index("ix_usage_events_org_project_occurred", "org_id", "project_id", "occurred_at"),
-        Index("ix_usage_events_org_metric_occurred", "org_id", "metric", "occurred_at"),
+        Index("ix_usage_events_user_occurred", "user_id", "occurred_at"),
+        Index("ix_usage_events_user_metric_occurred", "user_id", "metric", "occurred_at"),
     )
     
     id: int = Field(primary_key=True)
-    org_id: UUID = Field(foreign_key="orgs.id", index=True)
-    project_id: Optional[UUID] = Field(foreign_key="projects.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     source: UsageSource
     ref_id: Optional[str] = None
     metric: UsageMetric
@@ -449,21 +419,20 @@ class UsageEvent(SQLModel, table=True):
     occurred_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Relationships
-    organization: Organization = Relationship(back_populates="usage_events")
-    project: Optional[Project] = Relationship(back_populates="usage_events")
+    user: "User" = Relationship(back_populates="usage_events")
 
 
 class BillingAlert(BaseModel, table=True):
     __tablename__ = "billing_alerts"
     
-    org_id: UUID = Field(foreign_key="orgs.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     threshold_cents: int
     channel: BillingChannel
     target: str
     active: bool = Field(default=True)
     
     # Relationships
-    organization: Organization = Relationship(back_populates="billing_alerts")
+    user: "User" = Relationship(back_populates="billing_alerts")
 
 
 class UserSession(BaseModel, table=True):
@@ -545,7 +514,7 @@ class BillingInvoice(BaseModel, table=True):
         Index("ix_billing_invoices_stripe_id", "stripe_invoice_id", unique=True),
     )
     
-    org_id: UUID = Field(foreign_key="orgs.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     stripe_invoice_id: str
     period_start: datetime
     period_end: datetime
@@ -557,7 +526,7 @@ class BillingInvoice(BaseModel, table=True):
     metadata: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
     
     # Relationships
-    organization: Organization = Relationship(back_populates="billing_invoices")
+    user: "User" = Relationship(back_populates="billing_invoices")
 
 
 # Optional inference request body sampling table

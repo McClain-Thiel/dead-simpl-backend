@@ -5,9 +5,11 @@ from typing import Annotated
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from sqlmodel import Session, create_engine, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 from supabase import Client, create_client
 
+from .db.database import get_db_session
 from .db.models import User
 
 logger = logging.getLogger(__name__)
@@ -18,10 +20,6 @@ load_dotenv()
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 
-# Direct Postgres connection
-engine_url = os.environ.get("SUPABASE_DB_STRING")
-engine = create_engine(engine_url)
-
 
 def get_supabase_client() -> Client:
     logger.info("Initializing Supabase client")
@@ -29,14 +27,7 @@ def get_supabase_client() -> Client:
 
 
 SupabaseDependency = Annotated[Client, Depends(get_supabase_client)]
-
-
-def get_db_session():
-    with Session(engine) as session:
-        yield session
-
-
-DBSessionDependency = Annotated[Session, Depends(get_db_session)]
+DBSessionDependency = Annotated[AsyncSession, Depends(get_db_session)]
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="token")
 AccessTokenDependency = Annotated[str, Depends(reusable_oauth2)]
@@ -54,7 +45,9 @@ async def get_current_user(
         logger.error("Error during getting user %s", e)
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = db.exec(select(User).where(User.id == response.user.id)).first()
+    # Use firebase_uid instead of id for lookup since we removed the auth.users reference
+    result = await db.exec(select(User).where(User.firebase_uid == response.user.id))
+    user = result.first()
 
     if not user:
         logger.error("User not found in the database")
