@@ -36,5 +36,5 @@ jobs:
       run: |
         gcloud builds submit \
           --config cloudbuild.yaml \
-          --substitutions _CLOUDSDK_COMPUTE_ZONE="$GKE_ZONE",_CLOUDSDK_CONTAINER_CLUSTER="$GKE_CLUSTER" \
+          --substitutions _CLOUDSDK_COMPUTE_ZONE="$GKE_ZONE",_CLOUDSDK_CONTAINER_CLUSTER="$GKE_CLUSTER",PROJECT_ID="$PROJECT_ID" \
           --project $PROJECT_ID
