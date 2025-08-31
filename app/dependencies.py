@@ -12,7 +12,7 @@ from .db.models import User
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
+
 
 # Supabase connection
 url = os.environ.get("SUPABASE_URL")
