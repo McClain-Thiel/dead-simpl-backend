@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dead-simpl-backend
+  namespace: default
+  labels:
+    app: dead-simpl-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dead-simpl-backend
+  template:
+    metadata:
+      labels:
+        app: dead-simpl-backend
+    spec:
+      containers:
+      - name: dead-simpl-backend
+        image: gcr.io/$PROJECT_ID/dead-simpl-backend:$COMMIT_SHA
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: dead-simpl-config
+        - secretRef:
+            name: dead-simpl-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /docs
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /docs
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
