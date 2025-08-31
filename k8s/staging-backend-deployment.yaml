@@ -1,34 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dead-simpl-backend
-  namespace: default
+  name: dead-simpl-backend-staging
+  namespace: staging
   labels:
-    app: dead-simpl-backend
+    app: dead-simpl-backend-staging
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: dead-simpl-backend
+      app: dead-simpl-backend-staging
   template:
     metadata:
       labels:
-        app: dead-simpl-backend
+        app: dead-simpl-backend-staging
     spec:
       containers:
-      - name: dead-simpl-backend
-        image: gcr.io/halogen-eon-470613-h3/dead-simpl-backend:latest
+      - name: dead-simpl-backend-staging
+        image: gcr.io/halogen-eon-470613-h3/dead-simpl-backend:staging
         ports:
         - containerPort: 8000
         envFrom:
         - configMapRef:
-            name: dead-simpl-config
+            name: dead-simpl-staging-config
         - secretRef:
-            name: dead-simpl-secrets
+            name: dead-simpl-staging-secrets
         resources:
           requests:
             memory: "128Mi"
-            cpu: "25m"
+            cpu: "100m"
           limits:
             memory: "512Mi"
             cpu: "500m"
@@ -48,4 +48,3 @@ spec:
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
-

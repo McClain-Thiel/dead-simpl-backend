@@ -1,0 +1,61 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dead-simpl-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "dead-simpl-ip"
+    networking.gke.io/managed-certificates: "dead-simpl-ssl-cert"
+spec:
+  rules:
+  - host: api.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dead-simpl-backend-service
+            port:
+              number: 80
+  - host: app.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dead-simpl-frontend-prod-service
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dead-simpl-staging-ingress
+  namespace: staging
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "dead-simpl-staging-ip"
+    networking.gke.io/managed-certificates: "dead-simpl-staging-ssl-cert"
+spec:
+  rules:
+  - host: api-staging.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dead-simpl-backend-staging-service
+            port:
+              number: 80
+  - host: app-staging.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dead-simpl-frontend-staging-service
+            port:
+              number: 80
