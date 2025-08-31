@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: dead-simpl-backend
-        image: gcr.io/halogen-eon-470613-h3/dead-simpl-backend:latest
+        image: us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:latest
         ports:
         - containerPort: 8000
         envFrom:

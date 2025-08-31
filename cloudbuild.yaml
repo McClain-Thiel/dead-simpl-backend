@@ -4,21 +4,21 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/halogen-eon-470613-h3/dead-simpl-backend:$COMMIT_SHA'
+      - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
       - '-t'
-      - 'gcr.io/halogen-eon-470613-h3/dead-simpl-backend:latest'
+      - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:latest'
       - '.'
 
   # Push the Docker image to Google Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/halogen-eon-470613-h3/dead-simpl-backend:$COMMIT_SHA'
+      - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/halogen-eon-470613-h3/dead-simpl-backend:latest'
+      - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:latest'
 
   # Deploy to GKE
   - name: 'gcr.io/cloud-builders/kubectl'
@@ -36,15 +36,15 @@ steps:
       - 'set'
       - 'image'
       - 'deployment/dead-simpl-backend'
-      - 'dead-simpl-backend=gcr.io/halogen-eon-470613-h3/dead-simpl-backend:$COMMIT_SHA'
+      - 'dead-simpl-backend=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=${_CLOUDSDK_COMPUTE_ZONE}'
       - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
 
 # Store build artifacts
 images:
-  - 'gcr.io/halogen-eon-470613-h3/dead-simpl-backend:$COMMIT_SHA'
-  - 'gcr.io/halogen-eon-470613-h3/dead-simpl-backend:latest'
+  - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:latest'
 
 # Build timeout
 timeout: '1200s'
