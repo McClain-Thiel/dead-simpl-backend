@@ -27,8 +27,8 @@ steps:
       - '-f'
       - 'k8s/'
     env:
-      - 'CLOUDSDK_COMPUTE_ZONE=${_CLOUDSDK_COMPUTE_ZONE}'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=dead-simpl'
 
   # Update the deployment with the new image
   - name: 'gcr.io/cloud-builders/kubectl'
@@ -38,8 +38,8 @@ steps:
       - 'deployment/dead-simpl-backend'
       - 'dead-simpl-backend=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
     env:
-      - 'CLOUDSDK_COMPUTE_ZONE=${_CLOUDSDK_COMPUTE_ZONE}'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=dead-simpl'
 
 # Store build artifacts
 images:
