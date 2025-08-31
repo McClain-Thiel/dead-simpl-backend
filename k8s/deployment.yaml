@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: dead-simpl-backend
-        image: gcr.io/$PROJECT_ID/dead-simpl-backend:$COMMIT_SHA
+        image: gcr.io/$_PROJECT_ID/dead-simpl-backend:$_COMMIT_SHA
         ports:
         - containerPort: 8000
         envFrom:
