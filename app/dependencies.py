@@ -5,6 +5,7 @@ from typing import Annotated
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import create_engine
 from sqlmodel import Session, select
 from supabase import Client, create_client
 
@@ -13,11 +14,19 @@ from .db.models import User
 
 logger = logging.getLogger(__name__)
 
-
+load_dotenv()
 
 # Supabase connection
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
+
+# Direct Postgres connection
+engine_url = os.environ.get("SUPABASE_DB_STRING")
+if engine_url:
+    engine = create_engine(engine_url)
+else:
+    # For testing purposes when DB is not configured
+    engine = None
 
 
 def get_supabase_client() -> Client:
@@ -26,6 +35,15 @@ def get_supabase_client() -> Client:
 
 
 SupabaseDependency = Annotated[Client, Depends(get_supabase_client)]
+
+
+def get_db_session():
+    if engine is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    with Session(engine) as session:
+        yield session
+
+
 DBSessionDependency = Annotated[Session, Depends(get_db_session)]
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="token")

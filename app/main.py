@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db.database import init_database
+from .middleware.security import SecurityHeadersMiddleware
+from .routers import auth, bookmark, folders, docs
 
 # Load environment variables first
 load_dotenv()
@@ -20,7 +22,14 @@ except Exception as e:
     # Don't raise - allow the app to start even if database is not available
     logger.warning("Application starting without database connection")
 
-app = FastAPI()
+app = FastAPI(
+    docs_url=None,  # Disable default docs
+    redoc_url=None,  # Disable default redoc
+    openapi_url=None  # Disable default openapi.json
+)
+
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -36,5 +45,8 @@ async def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
 
-# Add routers here as needed
-# app.include_router(your_router)
+# Include routers
+app.include_router(auth.router)
+app.include_router(bookmark.router)
+app.include_router(folders.router)
+app.include_router(docs.router)
