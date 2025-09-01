@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Dict, List, Optional, Any
 from uuid import UUID, uuid4
 
-import sqlalchemy
 from sqlmodel import Field, Relationship, SQLModel, Index
 
 
@@ -182,7 +181,7 @@ class File(BaseModel, table=True):
     bytes: Optional[int] = None
     sha256: Optional[str] = None
     status: FileStatus = Field(default=FileStatus.PENDING)
-    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    meta: Optional[Dict[str, Any]] = Field(default=None, )
     
     # Relationships
     user: "User" = Relationship(back_populates="files")
@@ -199,7 +198,7 @@ class Dataset(BaseModel, table=True):
     file_id: UUID = Field(foreign_key="files.id")
     name: str
     mode: Mode
-    schema: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
+    schema: Dict[str, Any] = Field()
     rows_estimate: Optional[int] = None
     
     # Relationships
@@ -218,7 +217,7 @@ class CriterionDefinition(BaseModel, table=True):
     name: str
     applies_to: CriterionAppliesTo
     method: CriterionMethod
-    config: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
+    config: Dict[str, Any] = Field()
     
     # Relationships
     user: "User" = Relationship(back_populates="criterion_definitions")
@@ -233,9 +232,9 @@ class EvalRun(BaseModel, table=True):
     eval_type: EvalType = Field(default=EvalType.CRITERIA)
     mode: Mode
     status: JobStatus = Field(default=JobStatus.QUEUED)
-    selected_criteria: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
-    totals: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
-    token_usage: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    selected_criteria: Dict[str, Any] = Field()
+    totals: Optional[Dict[str, Any]] = Field(default=None, )
+    token_usage: Optional[Dict[str, Any]] = Field(default=None, )
     cost_cents: int = Field(default=0)
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
@@ -257,9 +256,9 @@ class EvalRowResult(SQLModel, table=True):
     id: int = Field(primary_key=True)
     run_id: UUID = Field(foreign_key="eval_runs.id", index=True)
     row_index: int
-    input_json: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
-    output_json: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
-    judgments: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
+    input_json: Dict[str, Any] = Field()
+    output_json: Dict[str, Any] = Field()
+    judgments: Dict[str, Any] = Field()
     tokens_in: Optional[int] = None
     tokens_out: Optional[int] = None
     cost_cents: Optional[int] = None
@@ -275,12 +274,12 @@ class TuneJob(BaseModel, table=True):
     project_id: UUID = Field(foreign_key="projects.id", index=True)
     provider: Provider
     base_model: str
-    config: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
+    config: Dict[str, Any] = Field()
     dataset_file_id: UUID = Field(foreign_key="files.id")
     provider_job_id: Optional[str] = None
     status: JobStatus = Field(default=JobStatus.QUEUED)
-    artifacts: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
-    metrics: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    artifacts: Optional[Dict[str, Any]] = Field(default=None, )
+    metrics: Optional[Dict[str, Any]] = Field(default=None, )
     cost_cents: int = Field(default=0)
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
@@ -312,7 +311,7 @@ class ModelVersion(BaseModel, table=True):
     model_id: UUID = Field(foreign_key="models.id", index=True)
     version: str
     artifact_file_id: Optional[UUID] = Field(foreign_key="files.id")
-    card: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    card: Optional[Dict[str, Any]] = Field(default=None, )
     
     # Relationships
     model: Model = Relationship(back_populates="versions")
@@ -326,8 +325,8 @@ class Deployment(BaseModel, table=True):
     user_id: UUID = Field(foreign_key="users.id", index=True)
     model_version_id: UUID = Field(foreign_key="model_versions.id")
     status: DeploymentStatus = Field(default=DeploymentStatus.CREATING)
-    autoscale: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
-    config: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    autoscale: Optional[Dict[str, Any]] = Field(default=None, )
+    config: Optional[Dict[str, Any]] = Field(default=None, )
     endpoint_slug: str = Field(unique=True, index=True)
     
     # Relationships
@@ -346,8 +345,8 @@ class APIKey(BaseModel, table=True):
     name: str
     key_prefix: str
     key_hash: str
-    scopes: Optional[List[str]] = Field(default=None, sa_type=sqlalchemy.ARRAY(sqlalchemy.String))
-    quota: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    scopes: Optional[List[str]] = Field(default=None)
+    quota: Optional[Dict[str, Any]] = Field(default=None, )
     status: APIKeyStatus = Field(default=APIKeyStatus.ACTIVE)
     expires_at: Optional[datetime] = None
     last_used_at: Optional[datetime] = None
@@ -374,7 +373,7 @@ class InferenceRequest(BaseModel, table=True):
     tokens_in: Optional[int] = None
     tokens_out: Optional[int] = None
     cost_cents: Optional[int] = None
-    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    meta: Optional[Dict[str, Any]] = Field(default=None, )
     
     # Relationships
     deployment: Optional[Deployment] = Relationship(back_populates="inference_requests")
@@ -392,7 +391,7 @@ class OperationEvent(SQLModel, table=True):
     source: EventSource
     action: str
     ref_id: Optional[str] = None
-    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    meta: Optional[Dict[str, Any]] = Field(default=None, )
     occurred_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Relationships
@@ -469,7 +468,7 @@ class PriceItem(BaseModel, table=True):
     currency: str = Field(default="usd")
     effective_from: datetime
     effective_to: Optional[datetime] = None
-    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    meta: Optional[Dict[str, Any]] = Field(default=None, )
     
     # Relationships
     price_book: PriceBook = Relationship(back_populates="price_items")
@@ -482,7 +481,7 @@ class ReconciliationRun(BaseModel, table=True):
     finished_at: Optional[datetime] = None
     status: ReconciliationStatus
     provider: Optional[str] = None
-    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    meta: Optional[Dict[str, Any]] = Field(default=None, )
     
     # Relationships
     adjustments: List["ReconciliationAdjustment"] = Relationship(back_populates="reconciliation_run")
@@ -504,7 +503,7 @@ class StripeWebhookEvent(BaseModel, table=True):
     __tablename__ = "stripe_webhook_events"
     
     type: str
-    payload: Dict[str, Any] = Field(sa_type=sqlalchemy.JSON)
+    payload: Dict[str, Any] = Field()
     received_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -523,7 +522,7 @@ class BillingInvoice(BaseModel, table=True):
     status: InvoiceStatus
     hosted_invoice_url: Optional[str] = None
     pdf_url: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = Field(default=None, sa_type=sqlalchemy.JSON)
+    metadata: Optional[Dict[str, Any]] = Field(default=None, )
     
     # Relationships
     user: "User" = Relationship(back_populates="billing_invoices")
