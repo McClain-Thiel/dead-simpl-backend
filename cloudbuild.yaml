@@ -20,68 +20,21 @@ steps:
       - 'push'
       - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$BRANCH_NAME'
 
-  # Deploy to GKE - Main branch (production)
-  - name: 'gcr.io/cloud-builders/kubectl'
+  # Deploy to GKE - conditional on branch
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
     args:
-      - 'apply'
-      - '-f'
-      - 'k8s/deployment.yaml'
-      - '-f'
-      - 'k8s/service.yaml'
-      - '-f'
-      - 'k8s/configmap.yaml'
-      - '-f'
-      - 'k8s/secret.yaml'
-    env:
-      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=dead-simpl'
-    condition:
-      - 'BRANCH_NAME'
-      - 'main'
-
-  # Update main deployment with new image
-  - name: 'gcr.io/cloud-builders/kubectl'
-    args:
-      - 'set'
-      - 'image'
-      - 'deployment/dead-simpl-backend'
-      - 'dead-simpl-backend=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
-    env:
-      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=dead-simpl'
-    condition:
-      - 'BRANCH_NAME'
-      - 'main'
-
-  # Deploy to GKE - Staging branch
-  - name: 'gcr.io/cloud-builders/kubectl'
-    args:
-      - 'apply'
-      - '-f'
-      - 'k8s/staging-backend-deployment.yaml'
-      - '-f'
-      - 'k8s/staging-backend-service.yaml'
-    env:
-      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=dead-simpl'
-    condition:
-      - 'BRANCH_NAME'
-      - 'staging'
-
-  # Update staging deployment with new image
-  - name: 'gcr.io/cloud-builders/kubectl'
-    args:
-      - 'set'
-      - 'image'
-      - 'deployment/dead-simpl-backend-staging'
-      - 'dead-simpl-backend-staging=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
-      - '--namespace=staging'
-    env:
-      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=dead-simpl'
-    condition:
-      - 'BRANCH_NAME'
-      - 'staging'
+      - '-c'
+      - |
+        if [[ "$BRANCH_NAME" == "main" ]]; then
+          gcloud container clusters get-credentials dead-simpl --zone=us-central1-c --project=halogen-eon-470613-h3
+          kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/configmap.yaml -f k8s/secret.yaml
+          kubectl set image deployment/dead-simpl-backend dead-simpl-backend=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA
+        elif [[ "$BRANCH_NAME" == "staging" ]]; then
+          gcloud container clusters get-credentials dead-simpl --zone=us-central1-c --project=halogen-eon-470613-h3
+          kubectl apply -f k8s/staging-backend-deployment.yaml -f k8s/staging-backend-service.yaml
+          kubectl set image deployment/dead-simpl-backend-staging dead-simpl-backend-staging=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA --namespace=staging
+        fi
 
 # Store build artifacts
 images:
