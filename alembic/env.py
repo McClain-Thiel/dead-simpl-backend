@@ -2,18 +2,16 @@ import os
 import sys
 from logging.config import fileConfig
 
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlmodel import SQLModel
 
 from alembic import context
+from app.config import config
 from app.db.models import *  # noqa
 
 sys.path.append(os.path.join(os.getcwd(), "app"))
 
-load_dotenv()
-
-DB_URL = os.getenv("SUPABASE_DB_STRING")
+DB_URL = config.database_url
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

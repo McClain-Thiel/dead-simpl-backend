@@ -1,9 +1,9 @@
 import logging
-import os
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
+from ..config import config
 from ..db.models import User
 from ..dependencies import DBSessionDependency, SupabaseDependency
 from ..schemas.auth import UserSign
@@ -19,7 +19,7 @@ async def login_for_swagger(
 ):
     """Swagger specific route to get the JWT token. To be used with
     the "Authorize" button in the Swagger UI."""
-    if os.environ.get("DEV_ENV") != "dev":
+    if config.dev_env != "dev":
         raise HTTPException(
             status_code=404, detail="This route is only available in dev."
         )
