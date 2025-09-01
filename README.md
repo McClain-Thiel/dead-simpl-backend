@@ -27,32 +27,106 @@ The project features a basic example of a bookmark application, supporting CRUD 
     You don't have to do that in a virtual environment, as UV is a standalone tool.
     UV will later on install the dependencies for you in a virtual environnement.
 
-## Usage
+## Environment Setup
 
-1. Set up your environment variables for Supabase and database configuration or use an `.env` file based on the given example:
-    ```bash
-    cp .env.example .env
-    ```
+This project supports three environments: **local development**, **staging**, and **production**.
 
-    Update the `.env` file with your Supabase URL, Supabase key, database URL, and database URL for migrations.
+### Quick Start (Local Development)
 
-2. (Optional) In case you perform modifications to `models.py` (ie. modification to the DB scheme): Generate a new Alembic migration:
-    ```bash
-    uv run alembic revision --autogenerate -m "Your message here"
-    ```
+1. **Install dependencies:**
+   ```bash
+   make install
+   # or: uv sync
+   ```
 
-3. Run the database migrations:
-    ```bash
-    uv run alembic upgrade head
-    ```
+2. **Configure environment:**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your Supabase credentials
+   ```
 
-4. Start the FastAPI server:
-    ```bash
-    uv run uvicorn app.main:app --reload --reload-dir app
-    ```
-    At the first run, UV will create a virtual environment and install the dependencies inside it.
+3. **Start development environment:**
+   ```bash
+   make dev
+   ```
+   This will:
+   - Start a local PostgreSQL database in Docker
+   - Run database migrations automatically
+   - Start the FastAPI server with hot reload
 
-5. Access the API documentation at `http://127.0.0.1:8000/docs`.
+4. **Access the API documentation at `http://127.0.0.1:8000/docs`**
+
+### Environment Configuration
+
+#### Local Development
+- Uses local PostgreSQL database (Docker)
+- Hot reload enabled
+- Debug logging
+- Supabase used only for authentication
+
+#### Staging
+- Uses separate Supabase staging database
+- Production-like settings
+- Reduced logging
+
+#### Production
+- Uses Supabase production database
+- Optimized for performance
+- Multiple workers
+
+### Available Commands
+
+```bash
+make help           # Show all available commands
+make dev            # Start local development
+make staging        # Start staging environment
+make prod           # Start production environment
+make docker-dev     # Start only PostgreSQL for development
+make docker-full    # Start full stack in Docker
+make migrate        # Run database migrations
+make migrate-create # Create new migration
+make test           # Run tests
+make clean          # Clean up Docker containers
+make reset-db       # Reset local database (⚠️ deletes data!)
+```
+
+### Manual Setup
+
+If you prefer manual setup:
+
+1. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+2. **For local development with Docker:**
+   ```bash
+   docker-compose -f docker-compose.dev.yml up -d postgres
+   ```
+
+3. **Run migrations:**
+   ```bash
+   uv run alembic upgrade head
+   ```
+
+4. **Start the server:**
+   ```bash
+   # Development (with hot reload)
+   uv run uvicorn app.main:app --reload --reload-dir app
+   
+   # Production
+   uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ```
+
+### Database Schema Changes
+
+When you modify `models.py`:
+
+```bash
+make migrate-create MESSAGE="your change description"
+make migrate
+```
 
 ## Contributing
 

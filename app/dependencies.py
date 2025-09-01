@@ -1,26 +1,22 @@
 import logging
-import os
 from typing import Annotated
 
-from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, create_engine, select
 from supabase import Client, create_client
 
+from .config import config
 from .db.models import User
 
 logger = logging.getLogger(__name__)
 
+# Supabase connection (for authentication)
+url = config.supabase_url
+key = config.supabase_key
 
-
-# Supabase connection
-url = os.environ.get("SUPABASE_URL")
-key = os.environ.get("SUPABASE_KEY")
-
-# Direct Postgres connection
-engine_url = os.environ.get("SUPABASE_DB_STRING")
-engine = create_engine(engine_url)
+# Database connection (environment-aware)
+engine = create_engine(config.database_url, echo=config.is_development)
 
 
 def get_supabase_client() -> Client:

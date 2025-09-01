@@ -9,3 +9,10 @@ wheels/
 # Virtual environments
 .venv
 secrets.sh
+
+# Environment files (keep examples)
+.env
+.env.local
+.env.staging
+.env.production
+!.env.example
