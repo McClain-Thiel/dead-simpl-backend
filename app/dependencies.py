@@ -20,7 +20,11 @@ key = os.environ.get("SUPABASE_KEY")
 
 # Direct Postgres connection
 engine_url = os.environ.get("SUPABASE_DB_STRING")
-engine = create_engine(engine_url)
+if engine_url:
+    engine = create_engine(engine_url)
+else:
+    # For testing purposes when DB is not configured
+    engine = None
 
 
 def get_supabase_client() -> Client:
@@ -32,6 +36,8 @@ SupabaseDependency = Annotated[Client, Depends(get_supabase_client)]
 
 
 def get_db_session():
+    if engine is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
     with Session(engine) as session:
         yield session
 
