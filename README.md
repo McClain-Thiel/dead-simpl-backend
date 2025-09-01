@@ -62,3 +62,11 @@ Contributions are welcome! Please open an issue or submit a pull request.
 
 This project is licensed under the MIT License.
 # dead-simpl-backend
+
+Triggering CI/CD pipeline.
+
+Triggering CI/CD pipeline again.
+
+Triggering CI/CD pipeline one more time.
+
+Triggering CI/CD pipeline with Artifact Registry permissions.

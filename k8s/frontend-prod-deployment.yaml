@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dead-simpl-frontend-prod
+  namespace: default
+  labels:
+    app: dead-simpl-frontend-prod
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dead-simpl-frontend-prod
+  template:
+    metadata:
+      labels:
+        app: dead-simpl-frontend-prod
+    spec:
+      containers:
+      - name: dead-simpl-frontend-prod
+        image: gcr.io/wh-main-307722/dead-simpl-frontend:production
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: dead-simpl-frontend-prod-config
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5

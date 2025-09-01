@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dead-simpl-config
+  namespace: default
+data:
+  DEV_ENV: "prod"

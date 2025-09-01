@@ -1,0 +1,49 @@
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$BRANCH_NAME'
+      - '.'
+
+  # Push the Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$BRANCH_NAME'
+
+  # Deploy to GKE - conditional on branch
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [[ "$BRANCH_NAME" == "main" ]]; then
+          gcloud container clusters get-credentials dead-simpl --zone=us-central1-c --project=halogen-eon-470613-h3
+          kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/configmap.yaml -f k8s/secret.yaml
+          kubectl set image deployment/dead-simpl-backend dead-simpl-backend=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA
+        elif [[ "$BRANCH_NAME" == "staging" ]]; then
+          gcloud container clusters get-credentials dead-simpl --zone=us-central1-c --project=halogen-eon-470613-h3
+          kubectl apply -f k8s/staging-backend-deployment.yaml -f k8s/staging-backend-service.yaml
+          kubectl set image deployment/dead-simpl-backend-staging dead-simpl-backend-staging=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA --namespace=staging
+        fi
+
+# Store build artifacts
+images:
+  - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend:$BRANCH_NAME'
+
+# Build timeout
+timeout: '1200s'
+
+# Logging configuration
+options:
+  logging: CLOUD_LOGGING_ONLY
