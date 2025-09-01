@@ -196,8 +196,7 @@ async def authenticate_for_docs(
         cleanup_expired_sessions()
         
         # Set a cookie and redirect to docs
-        html_response = HTMLResponse(
-            content=f"""
+        html_content = f"""
             <!DOCTYPE html>
             <html>
             <head>
@@ -212,9 +211,9 @@ async def authenticate_for_docs(
                 <p>If not redirected automatically, <a href="/docs">click here</a>.</p>
             </body>
             </html>
-            """,
-            status_code=200
-        )
+            """
+        
+        html_response = HTMLResponse(content=html_content, status_code=200)
         html_response.set_cookie(
             key="docs_session",
             value=session_id,
@@ -234,48 +233,48 @@ async def authenticate_for_docs(
     except Exception as e:
         logger.error("Error during docs authentication: %s", e)
         # Return to login page with error
-        html_content = f"""
+        html_content = """
         <!DOCTYPE html>
         <html>
         <head>
             <title>Documentation Access</title>
             <style>
-                body {{
+                body {
                     font-family: Arial, sans-serif;
                     max-width: 400px;
                     margin: 100px auto;
                     padding: 20px;
                     background-color: #f5f5f5;
-                }}
-                .login-container {{
+                }
+                .login-container {
                     background: white;
                     padding: 30px;
                     border-radius: 8px;
                     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }}
-                h2 {{
+                }
+                h2 {
                     text-align: center;
                     color: #333;
                     margin-bottom: 30px;
-                }}
-                .form-group {{
+                }
+                .form-group {
                     margin-bottom: 20px;
-                }}
-                label {{
+                }
+                label {
                     display: block;
                     margin-bottom: 5px;
                     color: #555;
                     font-weight: bold;
-                }}
-                input[type="email"], input[type="password"] {{
+                }
+                input[type="email"], input[type="password"] {
                     width: 100%;
                     padding: 12px;
                     border: 1px solid #ddd;
                     border-radius: 4px;
                     box-sizing: border-box;
                     font-size: 16px;
-                }}
-                button {{
+                }
+                button {
                     width: 100%;
                     padding: 12px;
                     background-color: #007bff;
@@ -284,15 +283,15 @@ async def authenticate_for_docs(
                     border-radius: 4px;
                     font-size: 16px;
                     cursor: pointer;
-                }}
-                button:hover {{
+                }
+                button:hover {
                     background-color: #0056b3;
-                }}
-                .error {{
+                }
+                .error {
                     color: #dc3545;
                     margin-top: 10px;
                     text-align: center;
-                }}
+                }
             </style>
         </head>
         <body>
