@@ -1,9 +1,13 @@
 import logging
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db.database import init_database
+
+# Load environment variables first
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +17,8 @@ try:
     logger.info("✓ Database initialized successfully")
 except Exception as e:
     logger.error(f"✗ Failed to initialize database: {e}")
-    raise
+    # Don't raise - allow the app to start even if database is not available
+    logger.warning("Application starting without database connection")
 
 app = FastAPI()
 

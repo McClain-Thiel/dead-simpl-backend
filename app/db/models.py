@@ -3,6 +3,9 @@ from enum import Enum
 from typing import Dict, List, Optional, Any
 from uuid import UUID, uuid4
 
+from sqlalchemy import JSON
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import String
 from sqlmodel import Field, Relationship, SQLModel, Index
 
 
@@ -76,6 +79,13 @@ class APIKeyStatus(str, Enum):
     ACTIVE = "active"
     DISABLED = "disabled"
     REVOKED = "revoked"
+
+
+class UserRank(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+    EXPIRED = "expired"
+    WAITLIST = "waitlist"
 
 
 class InferenceRoute(str, Enum):
@@ -152,6 +162,7 @@ class User(TimestampedModel, table=True):
     firebase_uid: str = Field(unique=True, index=True)
     email: str = Field(index=True)
     name: Optional[str] = None
+    rank: UserRank = Field(default=UserRank.WAITLIST)
     deleted_at: Optional[datetime] = None
     
     # Relationships
@@ -181,7 +192,7 @@ class File(BaseModel, table=True):
     bytes: Optional[int] = None
     sha256: Optional[str] = None
     status: FileStatus = Field(default=FileStatus.PENDING)
-    meta: Optional[Dict[str, Any]] = Field(default=None, )
+    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     
     # Relationships
     user: "User" = Relationship(back_populates="files")
@@ -198,7 +209,7 @@ class Dataset(BaseModel, table=True):
     file_id: UUID = Field(foreign_key="files.id")
     name: str
     mode: Mode
-    schema: Dict[str, Any] = Field()
+    data_schema: Dict[str, Any] = Field(sa_type=JSON)
     rows_estimate: Optional[int] = None
     
     # Relationships
@@ -217,7 +228,7 @@ class CriterionDefinition(BaseModel, table=True):
     name: str
     applies_to: CriterionAppliesTo
     method: CriterionMethod
-    config: Dict[str, Any] = Field()
+    config: Dict[str, Any] = Field(sa_type=JSON)
     
     # Relationships
     user: "User" = Relationship(back_populates="criterion_definitions")
@@ -232,9 +243,9 @@ class EvalRun(BaseModel, table=True):
     eval_type: EvalType = Field(default=EvalType.CRITERIA)
     mode: Mode
     status: JobStatus = Field(default=JobStatus.QUEUED)
-    selected_criteria: Dict[str, Any] = Field()
-    totals: Optional[Dict[str, Any]] = Field(default=None, )
-    token_usage: Optional[Dict[str, Any]] = Field(default=None, )
+    selected_criteria: Dict[str, Any] = Field(sa_type=JSON)
+    totals: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
+    token_usage: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     cost_cents: int = Field(default=0)
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
@@ -256,9 +267,9 @@ class EvalRowResult(SQLModel, table=True):
     id: int = Field(primary_key=True)
     run_id: UUID = Field(foreign_key="eval_runs.id", index=True)
     row_index: int
-    input_json: Dict[str, Any] = Field()
-    output_json: Dict[str, Any] = Field()
-    judgments: Dict[str, Any] = Field()
+    input_json: Dict[str, Any] = Field(sa_type=JSON)
+    output_json: Dict[str, Any] = Field(sa_type=JSON)
+    judgments: Dict[str, Any] = Field(sa_type=JSON)
     tokens_in: Optional[int] = None
     tokens_out: Optional[int] = None
     cost_cents: Optional[int] = None
@@ -274,12 +285,12 @@ class TuneJob(BaseModel, table=True):
     project_id: UUID = Field(foreign_key="projects.id", index=True)
     provider: Provider
     base_model: str
-    config: Dict[str, Any] = Field()
+    config: Dict[str, Any] = Field(sa_type=JSON)
     dataset_file_id: UUID = Field(foreign_key="files.id")
     provider_job_id: Optional[str] = None
     status: JobStatus = Field(default=JobStatus.QUEUED)
-    artifacts: Optional[Dict[str, Any]] = Field(default=None, )
-    metrics: Optional[Dict[str, Any]] = Field(default=None, )
+    artifacts: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
+    metrics: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     cost_cents: int = Field(default=0)
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
@@ -311,7 +322,7 @@ class ModelVersion(BaseModel, table=True):
     model_id: UUID = Field(foreign_key="models.id", index=True)
     version: str
     artifact_file_id: Optional[UUID] = Field(foreign_key="files.id")
-    card: Optional[Dict[str, Any]] = Field(default=None, )
+    card: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     
     # Relationships
     model: Model = Relationship(back_populates="versions")
@@ -325,8 +336,8 @@ class Deployment(BaseModel, table=True):
     user_id: UUID = Field(foreign_key="users.id", index=True)
     model_version_id: UUID = Field(foreign_key="model_versions.id")
     status: DeploymentStatus = Field(default=DeploymentStatus.CREATING)
-    autoscale: Optional[Dict[str, Any]] = Field(default=None, )
-    config: Optional[Dict[str, Any]] = Field(default=None, )
+    autoscale: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
+    config: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     endpoint_slug: str = Field(unique=True, index=True)
     
     # Relationships
@@ -345,8 +356,8 @@ class APIKey(BaseModel, table=True):
     name: str
     key_prefix: str
     key_hash: str
-    scopes: Optional[List[str]] = Field(default=None)
-    quota: Optional[Dict[str, Any]] = Field(default=None, )
+    scopes: Optional[List[str]] = Field(default=None, sa_type=ARRAY(String))
+    quota: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     status: APIKeyStatus = Field(default=APIKeyStatus.ACTIVE)
     expires_at: Optional[datetime] = None
     last_used_at: Optional[datetime] = None
@@ -373,7 +384,7 @@ class InferenceRequest(BaseModel, table=True):
     tokens_in: Optional[int] = None
     tokens_out: Optional[int] = None
     cost_cents: Optional[int] = None
-    meta: Optional[Dict[str, Any]] = Field(default=None, )
+    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     
     # Relationships
     deployment: Optional[Deployment] = Relationship(back_populates="inference_requests")
@@ -391,7 +402,7 @@ class OperationEvent(SQLModel, table=True):
     source: EventSource
     action: str
     ref_id: Optional[str] = None
-    meta: Optional[Dict[str, Any]] = Field(default=None, )
+    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     occurred_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Relationships
@@ -468,7 +479,7 @@ class PriceItem(BaseModel, table=True):
     currency: str = Field(default="usd")
     effective_from: datetime
     effective_to: Optional[datetime] = None
-    meta: Optional[Dict[str, Any]] = Field(default=None, )
+    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     
     # Relationships
     price_book: PriceBook = Relationship(back_populates="price_items")
@@ -481,7 +492,7 @@ class ReconciliationRun(BaseModel, table=True):
     finished_at: Optional[datetime] = None
     status: ReconciliationStatus
     provider: Optional[str] = None
-    meta: Optional[Dict[str, Any]] = Field(default=None, )
+    meta: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     
     # Relationships
     adjustments: List["ReconciliationAdjustment"] = Relationship(back_populates="reconciliation_run")
@@ -503,7 +514,7 @@ class StripeWebhookEvent(BaseModel, table=True):
     __tablename__ = "stripe_webhook_events"
     
     type: str
-    payload: Dict[str, Any] = Field()
+    payload: Dict[str, Any] = Field(sa_type=JSON)
     received_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -522,7 +533,7 @@ class BillingInvoice(BaseModel, table=True):
     status: InvoiceStatus
     hosted_invoice_url: Optional[str] = None
     pdf_url: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = Field(default=None, )
+    invoice_metadata: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     
     # Relationships
     user: "User" = Relationship(back_populates="billing_invoices")
