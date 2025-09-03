@@ -1,4 +1,11 @@
 steps:
+  # Fetch the secret from Secret Manager
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'gcloud secrets versions access latest --secret=dead-simpl-firebase-adminsdk --format="get(payload.data)" | tr "_-" "/+" | base64 -d > dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json'
+
   # Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args:
