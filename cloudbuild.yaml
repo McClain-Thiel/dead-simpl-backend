@@ -18,7 +18,7 @@ steps:
 
   # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args:
+    args: 
       - 'push'
       - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
 
@@ -59,3 +59,5 @@ substitutions:
   _PROJECT_ID: 'halogen-eon-470613-h3'
   _CLOUDSDK_COMPUTE_ZONE: 'us-central1-c'
   _CLOUDSDK_CONTAINER_CLUSTER: 'dead-simpl'
+  _COMMIT_SHA: '_'
+  _BRANCH_NAME: '_'
