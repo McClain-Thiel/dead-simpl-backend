@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #357ae8;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Login</h1>
+        <div id="error" class="error"></div>
+        <div id="loading" class="loading">Loading...</div>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button id="loginBtn" onclick="login()">Login</button>
+    </div>
+
+    <script type="module">
+        // Show loading while Firebase loads
+        document.getElementById('loading').style.display = 'block';
+        
+        try {
+            // Import Firebase modules
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+            const { getAuth, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+
+            // Get Firebase config from server
+            const response = await fetch("/docs/config");
+            if (!response.ok) {
+                throw new Error('Failed to load Firebase configuration');
+            }
+            const firebaseConfig = await response.json();
+            
+            // Validate config
+            if (!firebaseConfig.apiKey) {
+                throw new Error('Invalid Firebase configuration');
+            }
+
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+
+            // Make login function available globally
+            window.login = async function() {
+                const email = document.getElementById("email").value;
+                const password = document.getElementById("password").value;
+                const loginBtn = document.getElementById("loginBtn");
+                const errorDiv = document.getElementById("error");
+
+                if (!email || !password) {
+                    showError("Please enter both email and password");
+                    return;
+                }
+
+                try {
+                    loginBtn.disabled = true;
+                    loginBtn.textContent = "Signing in...";
+                    errorDiv.style.display = 'none';
+
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    const idToken = await user.getIdToken();
+
+                    // Set the token in a cookie via the backend
+                    const tokenResponse = await fetch("/docs-login", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ id_token: idToken }),
+                    });
+
+                    if (tokenResponse.ok) {
+                        window.location.href = "/docs";
+                    } else {
+                        throw new Error("Failed to set authentication cookie.");
+                    }
+                } catch (error) {
+                    console.error("Login error:", error);
+                    showError(getErrorMessage(error));
+                } finally {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = "Login";
+                }
+            };
+
+            function showError(message) {
+                const errorDiv = document.getElementById("error");
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+
+            function getErrorMessage(error) {
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        return 'No account found with this email address.';
+                    case 'auth/wrong-password':
+                        return 'Incorrect password.';
+                    case 'auth/invalid-email':
+                        return 'Invalid email address.';
+                    case 'auth/user-disabled':
+                        return 'This account has been disabled.';
+                    case 'auth/too-many-requests':
+                        return 'Too many failed attempts. Please try again later.';
+                    case 'auth/network-request-failed':
+                        return 'Network error. Please check your connection.';
+                    default:
+                        return error.message || 'An error occurred during login.';
+                }
+            }
+
+            // Enable Enter key for login
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById("error").textContent = "Failed to initialize authentication: " + error.message;
+            document.getElementById("error").style.display = 'block';
+        }
+    </script>
+</body>
+</html>

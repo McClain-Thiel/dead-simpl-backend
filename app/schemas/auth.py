@@ -10,3 +10,7 @@ class UserIn(BaseModel):
 class UserSign(BaseModel):
     email: EmailStr
     password: str
+
+
+class Token(BaseModel):
+    id_token: str

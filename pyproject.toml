@@ -12,6 +12,7 @@ dependencies = [
     "sqlalchemy>=2.0.36",
     "sqlmodel>=0.0.22",
     "supabase>=2.10.0",
+    "firebase-admin>=6.5.0",
 ]
 
 [tool.ruff]
