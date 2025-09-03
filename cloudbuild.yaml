@@ -59,5 +59,3 @@ substitutions:
   _PROJECT_ID: 'halogen-eon-470613-h3'
   _CLOUDSDK_COMPUTE_ZONE: 'us-central1-c'
   _CLOUDSDK_CONTAINER_CLUSTER: 'dead-simpl'
-  _COMMIT_SHA: ' ' 
-  _BRANCH_NAME: ' '
