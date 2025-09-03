@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON
+from sqlalchemy import JSON, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import String
 from sqlmodel import Field, Relationship, SQLModel, Index
@@ -162,7 +162,10 @@ class User(TimestampedModel, table=True):
     firebase_uid: str = Field(unique=True, index=True)
     email: str = Field(index=True)
     name: Optional[str] = None
-    rank: UserRank = Field(default=UserRank.WAITLIST)
+    rank: UserRank = Field(
+        default=UserRank.WAITLIST,
+        sa_type=SQLAlchemyEnum(UserRank, name="userrank", create_type=False),
+    )
     deleted_at: Optional[datetime] = None
     
     # Relationships
@@ -178,6 +181,8 @@ class User(TimestampedModel, table=True):
     usage_events: List["UsageEvent"] = Relationship(back_populates="user")
     billing_alerts: List["BillingAlert"] = Relationship(back_populates="user")
     billing_invoices: List["BillingInvoice"] = Relationship(back_populates="user")
+    folders: List["Folder"] = Relationship(back_populates="user")
+    bookmarks: List["Bookmark"] = Relationship(back_populates="user")
 
 
 # Organization and Project models removed - linking everything directly to User
@@ -282,7 +287,7 @@ class EvalRowResult(SQLModel, table=True):
 class TuneJob(BaseModel, table=True):
     __tablename__ = "tune_jobs"
     
-    project_id: UUID = Field(foreign_key="projects.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
     provider: Provider
     base_model: str
     config: Dict[str, Any] = Field(sa_type=JSON)
@@ -546,3 +551,35 @@ class InferenceBody(SQLModel, table=True):
     request_id: UUID = Field(foreign_key="inference_requests.id", primary_key=True)
     prompt_sample: Optional[str] = None
     response_sample: Optional[str] = None
+
+
+# Simple models for bookmark functionality (for compatibility)
+class Folder(BaseModel, table=True):
+    __tablename__ = "folders"
+    
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    name: str
+    description: Optional[str] = None
+    parent_id: Optional[UUID] = Field(foreign_key="folders.id", default=None)
+    
+    # Relationships
+    user: "User" = Relationship(back_populates="folders")
+    bookmarks: List["Bookmark"] = Relationship(back_populates="folder")
+    children: List["Folder"] = Relationship(back_populates="parent")
+    parent: Optional["Folder"] = Relationship(back_populates="children",
+        sa_relationship_kwargs={"remote_side": "Folder.id"})
+
+
+class Bookmark(BaseModel, table=True):
+    __tablename__ = "bookmarks"
+    
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    folder_id: Optional[UUID] = Field(foreign_key="folders.id", default=None)
+    title: str
+    url: str
+    description: Optional[str] = None
+    tags: Optional[List[str]] = Field(default=None, sa_type=ARRAY(String))
+    
+    # Relationships
+    user: "User" = Relationship(back_populates="bookmarks")
+    folder: Optional[Folder] = Relationship(back_populates="bookmarks")
