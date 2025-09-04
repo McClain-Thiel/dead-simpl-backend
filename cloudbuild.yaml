@@ -61,4 +61,3 @@ substitutions:
   _CLOUDSDK_CONTAINER_CLUSTER: 'dead-simpl'
   _COMMIT_SHA: '_'
   _BRANCH_NAME: '_'
-  

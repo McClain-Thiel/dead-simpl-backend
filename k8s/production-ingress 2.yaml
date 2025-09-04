@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dead-simpl-production-ingress
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.dead-simpl.com
+    - portal.dead-simpl.com
+    secretName: dead-simpl-prod-tls
+  rules:
+  - host: api.dead-simpl.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dead-simpl-backend-service
+            port:
+              number: 80
+  - host: portal.dead-simpl.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dead-simpl-frontend-prod-service
+            port:
+              number: 80
