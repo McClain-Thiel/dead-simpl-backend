@@ -74,6 +74,7 @@ To run the application locally using Docker and a local Supabase instance, follo
     ```bash
     docker build -t dead-simpl-backend .
     ```
+    
 
 4.  **Run Database Migrations:**
     Before starting the application, ensure your database schema is up-to-date by running Alembic migrations inside a temporary container:
