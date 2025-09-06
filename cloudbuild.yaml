@@ -11,14 +11,14 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/dead-simpl-backend/dead-simpl-backend:latest'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
       - '.'
 
   # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/dead-simpl-backend/dead-simpl-backend:latest'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
 
   # Deploy to GKE - staging
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -26,16 +26,19 @@ steps:
     args:
       - '-c'
       - |
-        gcloud container clusters get-credentials YOUR_CLUSTER_NAME --zone=YOUR_CLUSTER_ZONE --project=YOUR_PROJECT_ID
+        gcloud container clusters get-credentials YOUR_CLUSTER_NAME --zone=YOUR_CLUSTER_ZONE --project=${_PROJECT_ID}
         kubectl apply -f k8s/staging-backend-deployment.yaml -f k8s/staging-backend-service.yaml
-        kubectl set image deployment/dead-simpl-backend-staging dead-simpl-backend-staging=us-central1-docker.pkg.dev/YOUR_PROJECT_ID/dead-simpl-backend/dead-simpl-backend:latest --namespace=staging
+        kubectl set image deployment/dead-simpl-backend-staging dead-simpl-backend-staging=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest --namespace=staging
 
 # Store build artifacts
 images:
-  - 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/dead-simpl-backend/dead-simpl-backend:latest'
+  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
 
 # Build timeout
 timeout: '1200s'
+
+substitutions:
+  _PROJECT_ID: 'halogen-eon-470613-h3'
 
 options:
   logging: CLOUD_LOGGING_ONLY
