@@ -6,7 +6,7 @@ steps:
       - '-c'
       - 'gcloud secrets versions access latest --secret=dead-simpl-firebase-adminsdk --format="get(payload.data)" | tr "_-" "/+" | base64 -d > dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json && cat dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json'
 
-  # Build the Docker image
+  # Build the Docker image with latest tag
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -14,25 +14,34 @@ steps:
       - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
       - '.'
 
-  # Push the Docker image to Artifact Registry
+  # Tag the image with staging tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'tag'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:staging'
+
+  # Push both tags to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
+      - '--all-tags'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend'
 
-  # Deploy to GKE - staging
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        gcloud container clusters get-credentials YOUR_CLUSTER_NAME --zone=YOUR_CLUSTER_ZONE --project=${_PROJECT_ID}
-        kubectl apply -f k8s/staging-backend-deployment.yaml -f k8s/staging-backend-service.yaml
-        kubectl set image deployment/dead-simpl-backend-staging dead-simpl-backend-staging=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest --namespace=staging
+  # Note: Kubernetes deployment is managed via Terraform + Helm
+  # Uncomment below if you want Cloud Build to handle deployments directly:
+  # - name: 'gcr.io/cloud-builders/gcloud'
+  #   entrypoint: 'bash'
+  #   args:
+  #     - '-c'
+  #     - |
+  #       gcloud container clusters get-credentials staging-cluster --zone=us-central1 --project=${_PROJECT_ID}
+  #       kubectl set image deployment/backend-staging-backend-v2 backend=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:staging --namespace=staging
 
 # Store build artifacts
 images:
   - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
+  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:staging'
 
 # Build timeout
 timeout: '1200s'

@@ -122,3 +122,5 @@ Triggering build after granting secret access.
 Triggering rebuild after fixing Firebase secret access via Terraform.
 
 Testing unified image registry and tag configuration.
+
+Testing fixed Cloud Build tagging strategy.
