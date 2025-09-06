@@ -118,3 +118,5 @@ Triggering CI/CD pipeline with Artifact Registry permissions.
 Triggering CI/CD pipeline again to fix the build.
 
 Triggering build after granting secret access.
+
+Triggering rebuild after fixing Firebase secret access via Terraform.
