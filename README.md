@@ -1,5 +1,6 @@
 # Minimal template for FastAPI, Supabase, SQLModel and Alembic
 
+
 This is a minimal template for a FastAPI project with Supabase, SQLModel and Alembic.
 
 ## Features
