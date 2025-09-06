@@ -11,52 +11,34 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_BRANCH_NAME}'
+      - 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/dead-simpl-backend/dead-simpl-backend:latest'
       - '.'
 
   # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
+      - 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/dead-simpl-backend/dead-simpl-backend:latest'
 
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_BRANCH_NAME}'
-
-  # Deploy to GKE - conditional on branch
+  # Deploy to GKE - staging
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        if [[ "${_BRANCH_NAME}" == "main" ]]; then
-          gcloud container clusters get-credentials ${_CLOUDSDK_CONTAINER_CLUSTER} --zone=${_CLOUDSDK_COMPUTE_ZONE} --project=${_PROJECT_ID}
-          kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/configmap.yaml -f k8s/secret.yaml
-          kubectl set image deployment/dead-simpl-backend dead-simpl-backend=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}
-        elif [[ "${_BRANCH_NAME}" == "staging" ]]; then
-          gcloud container clusters get-credentials ${_CLOUDSDK_CONTAINER_CLUSTER} --zone=${_CLOUDSDK_COMPUTE_ZONE} --project=${_PROJECT_ID}
-          kubectl apply -f k8s/staging-backend-deployment.yaml -f k8s/staging-backend-service.yaml
-          kubectl set image deployment/dead-simpl-backend-staging dead-simpl-backend-staging=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA} --namespace=staging
-        fi
+        gcloud container clusters get-credentials YOUR_CLUSTER_NAME --zone=YOUR_CLUSTER_ZONE --project=YOUR_PROJECT_ID
+        kubectl apply -f k8s/staging-backend-deployment.yaml -f k8s/staging-backend-service.yaml
+        kubectl set image deployment/dead-simpl-backend-staging dead-simpl-backend-staging=us-central1-docker.pkg.dev/YOUR_PROJECT_ID/dead-simpl-backend/dead-simpl-backend:latest --namespace=staging
 
 # Store build artifacts
 images:
-  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
-  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_BRANCH_NAME}'
+  - 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/dead-simpl-backend/dead-simpl-backend:latest'
 
 # Build timeout
 timeout: '1200s'
 
+options:
+  logging: CLOUD_LOGGING_ONLY
 
 
-substitutions:
-  _PROJECT_ID: 'halogen-eon-470613-h3'
-  _CLOUDSDK_COMPUTE_ZONE: 'us-central1-c'
-  _CLOUDSDK_CONTAINER_CLUSTER: 'dead-simpl'
-  _COMMIT_SHA: '_'
-  _BRANCH_NAME: '_'
   
