@@ -1,11 +1,12 @@
 import logging
 import os
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Header
 from fastapi.security import OAuth2PasswordRequestForm
 from firebase_admin import auth
+from typing import Optional
 
-from ..db.models import User
+from ..db.models import User, UserRank
 from ..dependencies import DBSessionDependency
 from ..schemas.auth import UserSign, Token
 
@@ -66,3 +67,123 @@ def docs_login(token: Token, response: Response):
         path="/",
     )
     return {"status": "ok"}
+
+
+def _get_roles_and_permissions_for_rank(rank: UserRank):
+    """Map user ranks to roles and permissions."""
+    role_permissions_map = {
+        UserRank.ADMIN: {
+            "roles": [
+                {
+                    "id": "role-admin", 
+                    "name": "admin",
+                    "permissions": ["deploy", "manage_users", "delete_models", "tune_models", "evaluate_models"]
+                }
+            ],
+            "permissions": ["deploy", "manage_users", "delete_models", "tune_models", "evaluate_models"]
+        },
+        UserRank.USER: {
+            "roles": [
+                {
+                    "id": "role-user",
+                    "name": "data_scientist", 
+                    "permissions": ["tune_models", "evaluate_models"]
+                }
+            ],
+            "permissions": ["tune_models", "evaluate_models"]
+        },
+        UserRank.EXPIRED: {
+            "roles": [],
+            "permissions": []
+        },
+        UserRank.WAITLIST: {
+            "roles": [],
+            "permissions": []
+        }
+    }
+    
+    return role_permissions_map.get(rank, {"roles": [], "permissions": []})
+
+
+@router.get("/api/verify-user", tags=["auth"])
+def verify_user(
+    db: DBSessionDependency,
+    authorization: Optional[str] = Header(None),
+):
+    """Verify Firebase ID token and return user info with roles and permissions."""
+    
+    # Check for Authorization header
+    if not authorization:
+        raise HTTPException(
+            status_code=401, 
+            detail="Invalid or expired token"
+        )
+    
+    # Extract token from Bearer format
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
+    
+    token = authorization[7:]  # Remove "Bearer " prefix
+    
+    try:
+        # Verify the Firebase ID token
+        decoded_token = auth.verify_id_token(token)
+        firebase_uid = decoded_token['uid']
+        
+        # Get additional user info from Firebase token
+        firebase_email = decoded_token.get('email', '')
+        firebase_name = decoded_token.get('name', '')
+        firebase_photo = decoded_token.get('picture', '')
+        
+    except auth.ExpiredIdTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
+    except auth.InvalidIdTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"  
+        )
+    except Exception as e:
+        logger.error("Error during token verification: %s", e)
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
+    
+    # Find user in our database
+    from sqlmodel import select
+    result = db.exec(select(User).where(User.firebase_uid == firebase_uid))
+    user = result.first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found in system"
+        )
+    
+    # Check if user is authorized (not expired or waitlisted)  
+    if user.rank in [UserRank.EXPIRED, UserRank.WAITLIST]:
+        raise HTTPException(
+            status_code=403,
+            detail="User not found or not authorized"
+        )
+    
+    # Get roles and permissions based on user rank
+    roles_permissions = _get_roles_and_permissions_for_rank(user.rank)
+    
+    return {
+        "authorized": True,
+        "user": {
+            "id": str(user.id),
+            "email": firebase_email or user.email,
+            "displayName": firebase_name or user.name or "",
+            "photoURL": firebase_photo or "",
+            "roles": roles_permissions["roles"],
+            "permissions": roles_permissions["permissions"]
+        }
+    }

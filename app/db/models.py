@@ -141,6 +141,13 @@ class InvoiceStatus(str, Enum):
     VOID = "void"
 
 
+class UploadTask(str, Enum):
+    EVAL_RAG = "eval_rag"
+    EVAL_SFT = "eval_sft"
+    SFT = "sft"
+    DPO = "dpo"
+
+
 # Base model for common fields
 class BaseModel(SQLModel):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -173,7 +180,7 @@ class User(TimestampedModel, table=True):
     datasets: List["Dataset"] = Relationship(back_populates="user")
     criterion_definitions: List["CriterionDefinition"] = Relationship(back_populates="user")
     eval_runs: List["EvalRun"] = Relationship(back_populates="user")
-    tune_jobs: List["TuneJob"] = Relationship(back_populates="user")
+    fine_tune_jobs: List["FineTuneJob"] = Relationship(back_populates="user")
     models: List["Model"] = Relationship(back_populates="user")
     deployments: List["Deployment"] = Relationship(back_populates="user")
     api_keys: List["APIKey"] = Relationship(back_populates="user")
@@ -181,8 +188,7 @@ class User(TimestampedModel, table=True):
     usage_events: List["UsageEvent"] = Relationship(back_populates="user")
     billing_alerts: List["BillingAlert"] = Relationship(back_populates="user")
     billing_invoices: List["BillingInvoice"] = Relationship(back_populates="user")
-    folders: List["Folder"] = Relationship(back_populates="user")
-    bookmarks: List["Bookmark"] = Relationship(back_populates="user")
+    uploads: List["Upload"] = Relationship(back_populates="user")
 
 
 # Organization and Project models removed - linking everything directly to User
@@ -202,7 +208,7 @@ class File(BaseModel, table=True):
     # Relationships
     user: "User" = Relationship(back_populates="files")
     datasets: List["Dataset"] = Relationship(back_populates="file")
-    tune_jobs: List["TuneJob"] = Relationship(back_populates="dataset_file")
+    fine_tune_jobs: List["FineTuneJob"] = Relationship(back_populates="dataset_file")
     model_versions: List["ModelVersion"] = Relationship(back_populates="artifact_file")
     eval_runs: List["EvalRun"] = Relationship(back_populates="report_file")
 
@@ -284,14 +290,25 @@ class EvalRowResult(SQLModel, table=True):
     eval_run: EvalRun = Relationship(back_populates="row_results")
 
 
-class TuneJob(BaseModel, table=True):
-    __tablename__ = "tune_jobs"
+class FineTuneJob(BaseModel, table=True):
+    __tablename__ = "fine_tune_jobs"
     
     user_id: UUID = Field(foreign_key="users.id", index=True)
     provider: Provider
     base_model: str
     config: Dict[str, Any] = Field(sa_type=JSON)
     dataset_file_id: UUID = Field(foreign_key="files.id")
+    
+    # Relationships
+    user: "User" = Relationship(back_populates="fine_tune_jobs")
+    dataset_file: File = Relationship(back_populates="fine_tune_jobs")
+    runs: List["FineTuneRun"] = Relationship(back_populates="job")
+
+
+class FineTuneRun(BaseModel, table=True):
+    __tablename__ = "fine_tune_runs"
+
+    job_id: UUID = Field(foreign_key="fine_tune_jobs.id", index=True)
     provider_job_id: Optional[str] = None
     status: JobStatus = Field(default=JobStatus.QUEUED)
     artifacts: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
@@ -299,11 +316,11 @@ class TuneJob(BaseModel, table=True):
     cost_cents: int = Field(default=0)
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
+    error_message: Optional[str] = None
     
     # Relationships
-    user: "User" = Relationship(back_populates="tune_jobs")
-    dataset_file: File = Relationship(back_populates="tune_jobs")
-    created_models: List["Model"] = Relationship(back_populates="created_from_tune_job")
+    job: "FineTuneJob" = Relationship(back_populates="runs")
+    created_model: Optional["Model"] = Relationship(back_populates="created_from_run")
 
 
 class Model(BaseModel, table=True):
@@ -313,11 +330,11 @@ class Model(BaseModel, table=True):
     name: str
     provider: Provider
     external_model_id: Optional[str] = None
-    created_from_tune: Optional[UUID] = Field(foreign_key="tune_jobs.id")
+    created_from_run_id: Optional[UUID] = Field(foreign_key="fine_tune_runs.id")
     
     # Relationships
     user: "User" = Relationship(back_populates="models")
-    created_from_tune_job: Optional[TuneJob] = Relationship(back_populates="created_models")
+    created_from_run: Optional[FineTuneRun] = Relationship(back_populates="created_model")
     versions: List["ModelVersion"] = Relationship(back_populates="model")
 
 
@@ -544,6 +561,19 @@ class BillingInvoice(BaseModel, table=True):
     user: "User" = Relationship(back_populates="billing_invoices")
 
 
+class Upload(BaseModel, table=True):
+    __tablename__ = "uploads"
+
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    task: UploadTask
+    storage_url: str
+    filename: str
+    size: int
+    content_type: str
+
+    user: "User" = Relationship(back_populates="uploads")
+
+
 # Optional inference request body sampling table
 class InferenceBody(SQLModel, table=True):
     __tablename__ = "inference_bodies"
@@ -551,35 +581,3 @@ class InferenceBody(SQLModel, table=True):
     request_id: UUID = Field(foreign_key="inference_requests.id", primary_key=True)
     prompt_sample: Optional[str] = None
     response_sample: Optional[str] = None
-
-
-# Simple models for bookmark functionality (for compatibility)
-class Folder(BaseModel, table=True):
-    __tablename__ = "folders"
-    
-    user_id: UUID = Field(foreign_key="users.id", index=True)
-    name: str
-    description: Optional[str] = None
-    parent_id: Optional[UUID] = Field(foreign_key="folders.id", default=None)
-    
-    # Relationships
-    user: "User" = Relationship(back_populates="folders")
-    bookmarks: List["Bookmark"] = Relationship(back_populates="folder")
-    children: List["Folder"] = Relationship(back_populates="parent")
-    parent: Optional["Folder"] = Relationship(back_populates="children",
-        sa_relationship_kwargs={"remote_side": "Folder.id"})
-
-
-class Bookmark(BaseModel, table=True):
-    __tablename__ = "bookmarks"
-    
-    user_id: UUID = Field(foreign_key="users.id", index=True)
-    folder_id: Optional[UUID] = Field(foreign_key="folders.id", default=None)
-    title: str
-    url: str
-    description: Optional[str] = None
-    tags: Optional[List[str]] = Field(default=None, sa_type=ARRAY(String))
-    
-    # Relationships
-    user: "User" = Relationship(back_populates="bookmarks")
-    folder: Optional[Folder] = Relationship(back_populates="bookmarks")
