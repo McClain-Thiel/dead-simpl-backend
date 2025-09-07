@@ -10,9 +10,7 @@ deploy:
   helm:
     releases:
     - name: backend-staging
-      chartPath: ../helm/backend
+      chartPath: helm
       namespace: staging
       valuesFiles:
-      - ../helm/backend/values.yaml
-      setValues:
-        image.tag: $SHORT_SHA
+      - helm/values.yaml
