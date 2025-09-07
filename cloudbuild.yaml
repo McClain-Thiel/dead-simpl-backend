@@ -6,27 +6,19 @@ steps:
       - '-c'
       - 'gcloud secrets versions access latest --secret=dead-simpl-firebase-adminsdk --format="get(payload.data)" | tr "_-" "/+" | base64 -d > dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json && cat dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json'
 
-  # Build the Docker image with latest tag
+  # Build the Docker image with branch-specific tag
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
       - '.'
 
-  # Tag the image with staging tag
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'tag'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:staging'
-
-  # Push both tags to Artifact Registry
+  # Push the tagged image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - '--all-tags'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
 
   # Note: Kubernetes deployment is managed via Terraform + Helm
   # Uncomment below if you want Cloud Build to handle deployments directly:
@@ -40,8 +32,7 @@ steps:
 
 # Store build artifacts
 images:
-  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:latest'
-  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:staging'
+  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
 
 # Build timeout
 timeout: '1200s'

@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.getcwd(), "app"))
 
 load_dotenv()
 
-DB_URL = os.getenv("SUPABASE_DB_STRING")
+DB_URL = os.getenv("DATABASE_URL")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

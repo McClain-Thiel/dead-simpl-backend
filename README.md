@@ -1,17 +1,15 @@
-# Minimal template for FastAPI, Supabase, SQLModel and Alembic
+# Dead Simpl Backend - FastAPI with CloudSQL PostgreSQL
 
-
-This is a minimal template for a FastAPI project with Supabase, SQLModel and Alembic.
+This is the backend API for Dead Simpl, built with FastAPI, CloudSQL PostgreSQL, SQLModel and Alembic.
 
 ## Features
 
 - FastAPI for building APIs
-- Supabase for authentication and database
+- CloudSQL PostgreSQL for database
 - SQLModel for ORM
-- Alembic for database versionning and migrations
+- Alembic for database migrations
+- Firebase Auth for authentication
 - uv for dependency management
-
-The project features a basic example of a bookmark application, supporting CRUD operations with Supabase authentication (including compatibility with Swagger's Auth).
 
 ## Installation
 
@@ -30,12 +28,12 @@ The project features a basic example of a bookmark application, supporting CRUD 
 
 ## Usage
 
-1. Set up your environment variables for Supabase and database configuration or use an `.env` file based on the given example:
+1. Set up your environment variables for database configuration or use an `.env` file based on the given example:
     ```bash
     cp .env.example .env
     ```
 
-    Update the `.env` file with your Supabase URL, Supabase key, database URL, and database URL for migrations.
+    Update the `.env` file with your DATABASE_URL for CloudSQL PostgreSQL connection.
 
 2. (Optional) In case you perform modifications to `models.py` (ie. modification to the DB scheme): Generate a new Alembic migration:
     ```bash
@@ -55,48 +53,19 @@ The project features a basic example of a bookmark application, supporting CRUD 
 
 5. Access the API documentation at `http://127.0.0.1:8000/docs`.
 
-## Local Development with Docker and Supabase
+## Deployment
 
-To run the application locally using Docker and a local Supabase instance, follow these steps:
+This application is deployed to Google Kubernetes Engine (GKE) using:
 
-1.  **Start Local Supabase:**
-    Ensure you have the Supabase CLI installed. Navigate to the `supabase/` directory and start the local Supabase services:
-    ```bash
-    npx supabase start
-    ```
-    This will spin up all necessary Docker containers for Supabase (Postgres, Auth, Storage, etc.) and output connection details.
+- **CloudSQL PostgreSQL** for production database
+- **Terraform** for infrastructure provisioning  
+- **Helm** for Kubernetes deployment
+- **Cloud Build** for CI/CD
 
-2.  **Configure Environment Variables:**
-    The application needs to connect to the local Supabase instance. Update your `.env` file with the details provided by `npx supabase start`. Specifically, ensure `SUPABASE_URL`, `SUPABASE_KEY`, and `SUPABASE_DB_STRING` are correctly set. The `SUPABASE_DB_STRING` should point to the internal Docker service name for the database, e.g., `postgresql://postgres:postgres@supabase_db_dead-simpl-backend:5432/postgres`.
-
-3.  **Build the Application Docker Image:**
-    Navigate back to the root of the `dead-simpl-backend` directory and build the application's Docker image:
-    ```bash
-    docker build -t dead-simpl-backend .
-    ```
-    
-
-4.  **Run Database Migrations:**
-    Before starting the application, ensure your database schema is up-to-date by running Alembic migrations inside a temporary container:
-    ```bash
-    docker run --rm --network supabase_network_dead-simpl-backend --env-file .env dead-simpl-backend alembic upgrade head
-    ```
-
-5.  **Run the Application Container:**
-    Start the application, connecting it to the same Docker network as Supabase:
-    ```bash
-    docker run -d --name dead-simpl-backend-app -p 8000:8000 --network supabase_network_dead-simpl-backend --env-file .env dead-simpl-backend
-    ```
-    This will expose the application on `http://localhost:8000`.
-
-6.  **Verify Application Status:**
-    Check the application logs to ensure it started successfully and connected to the database:
-    ```bash
-    docker logs -f dead-simpl-backend-app
-    ```
-
-7.  **Access the API:**
-    The API documentation will be available at `http://localhost:8000/docs`.
+The infrastructure configurations can be found in:
+- `../terraform/staging/` - Staging environment
+- `../terraform/production/` - Production environment
+- `../helm/backend/` - Kubernetes deployment templates
 
 ## Contributing
 
@@ -124,3 +93,5 @@ Triggering rebuild after fixing Firebase secret access via Terraform.
 Testing unified image registry and tag configuration.
 
 Testing fixed Cloud Build tagging strategy.
+
+Testing branch-aware tagging: staging branch should create :staging tag.
