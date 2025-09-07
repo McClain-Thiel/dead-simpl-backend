@@ -44,4 +44,4 @@ substitutions:
   _COMMIT_SHA: '${SHORT_SHA}'
 
 options:
-  logging: GCS_ONLY
+  logging: CLOUD_LOGGING_ONLY
