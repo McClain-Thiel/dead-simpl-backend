@@ -56,8 +56,8 @@ await init_database("postgresql+asyncpg://user:pass@host/db")
 
 ```bash
 DATABASE_URL=postgresql://user:pass@host:port/database
-# Or for Supabase:
-DATABASE_URL=postgresql://postgres:[password]@db.[project].supabase.co:5432/postgres
+# For local development:
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/deadSimpl
 
 # Optional
 DB_ECHO=true  # Enable SQL query logging

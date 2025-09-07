@@ -3,9 +3,10 @@ import os
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm
+from firebase_admin import auth
 
 from ..db.models import User
-from ..dependencies import DBSessionDependency, SupabaseDependency
+from ..dependencies import DBSessionDependency
 from ..schemas.auth import UserSign, Token
 
 logger = logging.getLogger(__name__)
