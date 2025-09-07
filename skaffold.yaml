@@ -1,0 +1,18 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: dead-simpl-backend
+build:
+  artifacts:
+  - image: us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend
+    context: .
+deploy:
+  helm:
+    releases:
+    - name: backend-staging
+      chartPath: ../helm/backend
+      namespace: staging
+      valuesFiles:
+      - ../helm/backend/values.yaml
+      setValues:
+        image.tag: latest

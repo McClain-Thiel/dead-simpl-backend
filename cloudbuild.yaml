@@ -11,28 +11,30 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
+      - 'us-central1-docker.pkg.dev/\${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:\${BRANCH_NAME}'
       - '.'
 
   # Push the tagged image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
+      - 'us-central1-docker.pkg.dev/\${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:\${BRANCH_NAME}'
 
-  # Note: Kubernetes deployment is managed via Terraform + Helm
-  # Uncomment below if you want Cloud Build to handle deployments directly:
-  # - name: 'gcr.io/cloud-builders/gcloud'
-  #   entrypoint: 'bash'
-  #   args:
-  #     - '-c'
-  #     - |
-  #       gcloud container clusters get-credentials staging-cluster --zone=us-central1 --project=${_PROJECT_ID}
-  #       kubectl set image deployment/backend-staging-backend-v2 backend=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:staging --namespace=staging
+  # Create a new Cloud Deploy release
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'deploy'
+      - 'releases'
+      - 'create'
+      - 'backend-release-\${SHORT_SHA}'
+      - '--delivery-pipeline=backend-pipeline'
+      - '--region=us-central1'
+      - '--source=.'
+      - '--images=dead-simpl-backend=us-central1-docker.pkg.dev/\${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:\${BRANCH_NAME}'
 
 # Store build artifacts
 images:
-  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
+  - 'us-central1-docker.pkg.dev/\${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:\${BRANCH_NAME}'
 
 # Build timeout
 timeout: '1200s'
