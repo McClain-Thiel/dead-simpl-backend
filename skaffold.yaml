@@ -15,4 +15,4 @@ deploy:
       valuesFiles:
       - ../helm/backend/values.yaml
       setValues:
-        image.tag: $_COMMIT_SHA
+        image.tag: $SHORT_SHA

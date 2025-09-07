@@ -11,14 +11,14 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${SHORT_SHA}'
       - '.'
 
   # Push the tagged image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${SHORT_SHA}'
 
   # Create a new Cloud Deploy release
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -30,11 +30,11 @@ steps:
       - '--delivery-pipeline=backend-pipeline'
       - '--region=us-central1'
       - '--source=.'
-      - '--images=dead-simpl-backend=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
+      - '--images=dead-simpl-backend=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${SHORT_SHA}'
 
 # Store build artifacts
 images:
-  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
+  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${SHORT_SHA}'
 
 # Build timeout
 timeout: '1200s'
@@ -44,4 +44,4 @@ substitutions:
   _COMMIT_SHA: ' '
 
 options:
-  logging: CLOUD_LOGGING_ONLY'
+  logging: GCS_ONLY
