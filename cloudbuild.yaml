@@ -6,19 +6,19 @@ steps:
       - '-c'
       - 'gcloud secrets versions access latest --secret=dead-simpl-firebase-adminsdk --format="get(payload.data)" | tr "_-" "/+" | base64 -d > dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json && cat dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json'
 
-  # Build the Docker image with branch-specific tag
+  # Build the Docker image with the commit SHA as the tag
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
       - '.'
 
   # Push the tagged image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
+      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
 
   # Create a new Cloud Deploy release
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -30,20 +30,18 @@ steps:
       - '--delivery-pipeline=backend-pipeline'
       - '--region=us-central1'
       - '--source=.'
-      - '--images=dead-simpl-backend=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
+      - '--images=dead-simpl-backend=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
 
 # Store build artifacts
 images:
-  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${BRANCH_NAME}'
+  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${_COMMIT_SHA}'
 
 # Build timeout
 timeout: '1200s'
 
 substitutions:
   _PROJECT_ID: 'halogen-eon-470613-h3'
+  _COMMIT_SHA: ' '
 
 options:
-  logging: CLOUD_LOGGING_ONLY
-
-
-  
+  logging: CLOUD_LOGGING_ONLY'
