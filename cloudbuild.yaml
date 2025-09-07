@@ -26,7 +26,7 @@ steps:
       - 'deploy'
       - 'releases'
       - 'create'
-      - 'backend-release-\${SHORT_SHA}'
+      - 'backend-release-$SHORT_SHA'
       - '--delivery-pipeline=backend-pipeline'
       - '--region=us-central1'
       - '--source=.'
