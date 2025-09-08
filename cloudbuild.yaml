@@ -1,47 +1,43 @@
 steps:
-  # Fetch the secret from Secret Manager
-  - name: 'gcr.io/cloud-builders/gcloud'
+  # Build the Docker image tagged with commit SHA
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build','-t','us-central1-docker.pkg.dev/$PROJECT_ID/dead-simpl-backend/dead-simpl-backend:$SHORT_SHA','.' ]
+
+  # Optionally tag the image with branch name (for non-PR builds)
+  - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
     args:
-      - '-c'
-      - 'gcloud secrets versions access latest --secret=dead-simpl-firebase-adminsdk --format="get(payload.data)" | tr "_-" "/+" | base64 -d > dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json && cat dead-simpl-landing-firebase-adminsdk-fbsvc-a58f8edb4a.json'
+      - -c
+      - |
+        if [ -n "$BRANCH_NAME" ]; then \
+          SAFE_TAG=$(echo "$BRANCH_NAME" | tr '/_' '--' | tr -cd '[:alnum:].-'); \
+          docker tag us-central1-docker.pkg.dev/$PROJECT_ID/dead-simpl-backend/dead-simpl-backend:$SHORT_SHA \
+                     us-central1-docker.pkg.dev/$PROJECT_ID/dead-simpl-backend/dead-simpl-backend:$SAFE_TAG; \
+          docker push us-central1-docker.pkg.dev/$PROJECT_ID/dead-simpl-backend/dead-simpl-backend:$SAFE_TAG; \
+        fi
 
-  # Build the Docker image with the commit SHA as the tag
+  # Push the commit-tagged image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'build'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${SHORT_SHA}'
-      - '.'
+    args: ['push','us-central1-docker.pkg.dev/$PROJECT_ID/dead-simpl-backend/dead-simpl-backend:$SHORT_SHA']
 
-  # Push the tagged image to Artifact Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${SHORT_SHA}'
-
-  # Create a new Cloud Deploy release
+  # Create a Cloud Deploy release against the unified pipeline
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       - 'deploy'
       - 'releases'
       - 'create'
-      - 'backend-release-$SHORT_SHA'
-      - '--delivery-pipeline=backend-pipeline'
+      - 'backend-$SHORT_SHA'
+      - '--delivery-pipeline=dead-simpl'
       - '--region=us-central1'
       - '--source=.'
-      - '--images=dead-simpl-backend=us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${SHORT_SHA}'
+      - '--images=us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend=us-central1-docker.pkg.dev/$PROJECT_ID/dead-simpl-backend/dead-simpl-backend:$SHORT_SHA'
 
 # Store build artifacts
 images:
-  - 'us-central1-docker.pkg.dev/${_PROJECT_ID}/dead-simpl-backend/dead-simpl-backend:${SHORT_SHA}'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/dead-simpl-backend/dead-simpl-backend:$SHORT_SHA'
 
 # Build timeout
 timeout: '1200s'
-
-substitutions:
-  _PROJECT_ID: 'halogen-eon-470613'
-  _COMMIT_SHA: '${SHORT_SHA}'
 
 options:
   logging: CLOUD_LOGGING_ONLY
