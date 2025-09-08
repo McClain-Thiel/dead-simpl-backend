@@ -17,10 +17,10 @@ class Database:
     def init_db(self, database_url: str = None) -> None:
         """Initialize database engine."""
         if database_url is None:
-            database_url = os.getenv("SUPABASE_DB_STRING")
+            database_url = os.getenv("DATABASE_URL")
             
         if not database_url:
-            raise ValueError("SUPABASE_DB_STRING environment variable is required")
+            raise ValueError("DATABASE_URL environment variable is required")
             
         self.engine = create_engine(
             database_url,
@@ -63,7 +63,7 @@ def init_database(database_url: str = None, create_tables: bool = True) -> None:
     Initialize the database connection and optionally create tables.
     
     Args:
-        database_url: Database connection URL. If None, uses SUPABASE_DB_STRING env var.
+        database_url: Database connection URL. If None, uses DATABASE_URL env var.
         create_tables: Whether to create tables if they don't exist.
     """
     db.init_db(database_url)

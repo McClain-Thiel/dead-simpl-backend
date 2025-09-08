@@ -1,0 +1,16 @@
+replicaCount: 2
+
+image:
+  repository: us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend
+  tag: main
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+  annotations:
+    cloud.google.com/load-balancer-type: "External"
+    kubernetes.io/ingress.global-static-ip-name: "backend-prod-ip"
+
+database:
+  secretName: "prod-db-url"

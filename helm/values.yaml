@@ -1,0 +1,13 @@
+replicaCount: 1
+
+image:
+  repository: us-central1-docker.pkg.dev/halogen-eon-470613-h3/dead-simpl-backend/dead-simpl-backend
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 80
+
+database:
+  secretName: "staging-db-url"

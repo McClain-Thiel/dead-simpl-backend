@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .db.database import init_database
 from .middleware.security import SecurityHeadersMiddleware
-from .routers import auth, bookmark, folders, docs
+from .routers import auth, docs, fine_tuning, deployments, api_keys, files, evals, stripe
 
 # Load environment variables first
 load_dotenv()
@@ -33,7 +33,13 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8081"],  # Allow only this origin
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://localhost:8081",
+        "https://portal.dead-simpl.com",
+        "https://dead-simpl.com",
+        "https://www.dead-simpl.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
@@ -47,6 +53,17 @@ async def health_check():
 
 # Include routers
 app.include_router(auth.router)
-app.include_router(bookmark.router)
-app.include_router(folders.router)
 app.include_router(docs.router)
+app.include_router(fine_tuning.router)
+app.include_router(deployments.router)
+app.include_router(api_keys.router)
+app.include_router(files.router)
+app.include_router(evals.router)
+app.include_router(stripe.router)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Test comment for CI/CD
+# Another test comment
