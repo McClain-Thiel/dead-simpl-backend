@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, staging ]
+  pull_request:
+    branches: [ main, staging ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Start services
+      run: docker-compose up -d
+    
+    - name: Wait for services to be ready
+      run: |
+        timeout 60 bash -c 'until curl -sf http://localhost:8000/health; do sleep 2; done'
+    
+    - name: Check health endpoint
+      run: |
+        curl -f http://localhost:8000/health || exit 1
+    
+    - name: Stop services
+      run: docker-compose down

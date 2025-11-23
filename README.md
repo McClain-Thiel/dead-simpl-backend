@@ -1,115 +1,122 @@
-# Minimal template for FastAPI, Supabase, SQLModel and Alembic
+# Dead Simpl Backend
 
+Simplified FastAPI backend with PostgreSQL.
 
-This is a minimal template for a FastAPI project with Supabase, SQLModel and Alembic.
+# What is it?
 
-## Features
+Dead Simpl is a no code web app for evaluating, fine tuning and deploying large language models (LLMs)  for specific goals. 
 
-- FastAPI for building APIs
-- Supabase for authentication and database
-- SQLModel for ORM
-- Alembic for database versionning and migrations
-- uv for dependency management
+- **Evaluation** is testing a model against specific use cases. You want to see how good a model is at X so you write a bunch of tests for it. You can think of it very similarly to how you might evaluate (test) a student.
 
-The project features a basic example of a bookmark application, supporting CRUD operations with Supabase authentication (including compatibility with Swagger's Auth).
+| Question | Expected Answer | Models Answer |
+| --- | --- | --- |
+| A customer asks: "What's your return policy?" | <A clear explanation of the 30-day return policy with free shipping> | <A generic description of some random return policy > |
+| Write a product description for a coffee maker | <A friendly, conversational description highlighting key features of *our* coffee maker> | <Description of a coffee maker> |
+- **Fine tuning** is teaching a model to be better at your specific task. Think of it like training a general doctor to become a specialist. The model already knows language, but you're teaching it to respond in exactly the way you need for your particular use case.
+- **Deployment** is making your model available for actual use. Once you've tested and trained your model, deployment means setting it up so your team or customers can actually use it in the real world, like launching a new tool or feature.
 
-## Installation
+These 3 actions create a loop you can use to improve how good your model is out in the real world:
 
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/yourusername/aipocket.git
-    cd aipocket
-    ```
+![Screenshot 2025-10-31 at 9.00.52 AM.png](attachment:1d7ef2d3-9a5c-4906-a841-d2e81a6970e7:Screenshot_2025-10-31_at_9.00.52_AM.png)
 
-2. Install UV:
-    ```bash
-    pip install uv
-    ```
-    You don't have to do that in a virtual environment, as UV is a standalone tool.
-    UV will later on install the dependencies for you in a virtual environnement.
+### Why is fine tuning necessary?
 
-## Usage
+Off-the-shelf models are powerful, but they're built for everyone. Fine tuning lets you customize them for your specific needs:
 
-1. Set up your environment variables for Supabase and database configuration or use an `.env` file based on the given example:
-    ```bash
-    cp .env.example .env
-    ```
+- **Match your brand voice**: A generic model might sound formal and robotic. Fine tuning can teach it to sound friendly and casual like your startup, or professional and authoritative like your law firm.
+- **Add industry-specific knowledge**: A general model doesn't know your company's products, your medical practice's procedures, or your restaurant's menu. Fine tuning gives it this specialized knowledge so it can answer questions accurately.
+- **Fix unwanted behaviors**: Maybe the model keeps apologizing too much, or gives overly long answers, or uses jargon your customers don't understand. Fine tuning helps you correct these specific issues.
+- **Follow your guidelines**: You might need responses in a specific format, want the model to always mention certain legal disclaimers, or require it to escalate certain types of questions to humans. Fine tuning teaches these rules.
 
-    Update the `.env` file with your Supabase URL, Supabase key, database URL, and database URL for migrations.
+<aside>
+💡
 
-2. (Optional) In case you perform modifications to `models.py` (ie. modification to the DB scheme): Generate a new Alembic migration:
-    ```bash
-    uv run alembic revision --autogenerate -m "Your message here"
-    ```
+**What about RAG?**
 
-3. Run the database migrations:
-    ```bash
-    uv run alembic upgrade head
-    ```
+RAG (Retrieval-Augmented Generation) is like giving your model a library card. Instead of fine tuning the model itself, you give it access to your documents and let it look up relevant information when answering questions. It's faster and cheaper than fine tuning, but works best when you just need the model to reference specific information rather than change how it behaves or talks.
 
-4. Start the FastAPI server:
-    ```bash
-    uv run uvicorn app.main:app --reload --reload-dir app
-    ```
-    At the first run, UV will create a virtual environment and install the dependencies inside it.
+</aside>
 
-5. Access the API documentation at `http://127.0.0.1:8000/docs`.
+Theres about 1000 papers that show that a smaller fine tuned model is as good or better than larger frontier models (GPT-5, Claude 4.5, ect) at specific tasks in addition to being faster, cheaper and owned by your org. 
 
-## Local Development with Docker and Supabase
+# Why Dead Simpl?
 
-To run the application locally using Docker and a local Supabase instance, follow these steps:
+### The Market Gap
 
-1.  **Start Local Supabase:**
-    Ensure you have the Supabase CLI installed. Navigate to the `supabase/` directory and start the local Supabase services:
-    ```bash
-    npx supabase start
-    ```
-    This will spin up all necessary Docker containers for Supabase (Postgres, Auth, Storage, etc.) and output connection details.
+When you google "fine tune llm" this is what comes up. There are all guides and "How Tos" not one single service provider, much less a no code option.
 
-2.  **Configure Environment Variables:**
-    The application needs to connect to the local Supabase instance. Update your `.env` file with the details provided by `npx supabase start`. Specifically, ensure `SUPABASE_URL`, `SUPABASE_KEY`, and `SUPABASE_DB_STRING` are correctly set. The `SUPABASE_DB_STRING` should point to the internal Docker service name for the database, e.g., `postgresql://postgres:postgres@supabase_db_dead-simpl-backend:5432/postgres`.
+![Fine tuning is pretty easy at this point. Theres a reasonable number of knobs to turn but most AI engineers could do it with a bit of time. The difficult part is the data and ops. ](attachment:e3521673-8f41-4eca-87e6-8b7bc3f0b554:Screenshot_2025-10-31_at_9.06.55_AM.png)
 
-3.  **Build the Application Docker Image:**
-    Navigate back to the root of the `dead-simpl-backend` directory and build the application's Docker image:
-    ```bash
-    docker build -t dead-simpl-backend .
-    ```
+Fine tuning is pretty easy at this point. There are a reasonable number of knobs to turn but most AI engineers could do it with a bit of time. **The difficult part is the data and ops.**
 
-4.  **Run Database Migrations:**
-    Before starting the application, ensure your database schema is up-to-date by running Alembic migrations inside a temporary container:
-    ```bash
-    docker run --rm --network supabase_network_dead-simpl-backend --env-file .env dead-simpl-backend alembic upgrade head
-    ```
+But here's the problem: **AI engineers are rare and expensive.** Most companies don't have them, and the ones that do can't keep up with demand. Meanwhile, these same companies are full of project managers, operations specialists, and data analysts who already know their business inside and out.
 
-5.  **Run the Application Container:**
-    Start the application, connecting it to the same Docker network as Supabase:
-    ```bash
-    docker run -d --name dead-simpl-backend-app -p 8000:8000 --network supabase_network_dead-simpl-backend --env-file .env dead-simpl-backend
-    ```
-    This will expose the application on `http://localhost:8000`.
+### Who This Is For
 
-6.  **Verify Application Status:**
-    Check the application logs to ensure it started successfully and connected to the database:
-    ```bash
-    docker logs -f dead-simpl-backend-app
-    ```
+Dead Simpl is built for the people companies already have:
 
-7.  **Access the API:**
-    The API documentation will be available at `http://localhost:8000/docs`.
+- **Project managers** who understand what the business needs but can't code the solution
+- **Operations specialists** who know where the problems are but need technical help to fix them
+- **Business teams** who want to experiment with AI without waiting for engineering resources
 
-## Contributing
+These people don't need to understand neural networks or transformers. They need to understand their business, their customers, and their data. And that's exactly what they're already good at.
 
-Contributions are welcome! Please open an issue or submit a pull request.
+### Why This Works
 
-## License
+Writing evaluations doesn't require a computer science degree. If you can write "What should our chatbot say when a customer asks about returns?" you can write an evaluation. If you can create example responses in a spreadsheet, you can create training data.
 
-This project is licensed under the MIT License.
-# dead-simpl-backend
+The technical complexity of fine tuning, deployment, and infrastructure shouldn't require an AI engineer. Organizations are already excellent at managing people who work with data and processes. Dead Simpl lets them apply that existing strength to LLM development.
 
-Triggering CI/CD pipeline.
+Instead of hiring scarce AI engineering talent, companies can empower the people they already have to build and improve their AI systems. The AI engineers who do exist can focus on truly complex problems instead of repetitive fine tuning tasks.
 
-Triggering CI/CD pipeline again.
+## Local Development
 
-Triggering CI/CD pipeline one more time.
+### Prerequisites
+- Docker
+- Docker Compose
 
-Triggering CI/CD pipeline with Artifact Registry permissions.
+### Running Locally
+
+```bash
+# Start the backend and database
+docker-compose up
+
+# The API will be available at http://localhost:8000
+# Health check: http://localhost:8000/health
+```
+
+### Stopping
+
+```bash
+docker-compose down
+```
+
+### Database
+
+The database schema is automatically created on startup using SQL migrations in `migrations/init.sql`.
+
+Currently includes:
+- Users table with ranks (admin, user, expired, waitlist)
+
+## CI/CD
+
+Simple GitHub Actions workflow runs on push to main/staging:
+- Builds and starts services via docker-compose
+- Checks health endpoint
+- Stops services
+
+## Project Structure
+
+```
+├── app/
+│   ├── db/               # Database models and connection
+│   ├── routers/          # API route handlers
+│   ├── schemas/          # Pydantic schemas
+│   ├── middleware/       # Custom middleware
+│   └── main.py           # FastAPI app
+├── migrations/
+│   └── init.sql          # Initial database schema
+├── docker-compose.yml    # Local development setup
+├── Dockerfile            # Backend container
+└── .github/workflows/    # CI configuration
+```

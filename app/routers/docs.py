@@ -22,13 +22,13 @@ async def login_page():
 @router.get("/docs/config")
 async def get_firebase_config():
     return JSONResponse({
-        "apiKey": os.environ.get("FIREBASE_API_KEY"),
-        "authDomain": os.environ.get("FIREBASE_AUTH_DOMAIN"),
-        "projectId": os.environ.get("FIREBASE_PROJECT_ID"),
-        "storageBucket": os.environ.get("FIREBASE_STORAGE_BUCKET"),
-        "messagingSenderId": os.environ.get("FIREBASE_MESSAGING_SENDER_ID"),
-        "appId": os.environ.get("FIREBASE_APP_ID"),
-        "measurementId": os.environ.get("FIREBASE_MEASUREMENT_ID"),
+        "apiKey": "AIzaSyBD3eDWNqTTShUVwMrKh0mVG1-JFnhICkM",
+        "authDomain": "dead-simpl-landing.firebaseapp.com",
+        "projectId": "dead-simpl-landing",
+        "storageBucket": "dead-simpl-landing.firebasestorage.app",
+        "messagingSenderId": "643606161991",
+        "appId": "1:643606161991:web:c9305e31acf9d2fe7b9f62",
+        "measurementId": "G-YQXCM61EM3"
     })
 
 
